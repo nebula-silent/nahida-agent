@@ -20,6 +20,10 @@ dist/
 *.js.map
 *.tsbuildinfo
 
+# 9.30 打包中间产物：build/ 是 electron-builder buildResources（icon 生成图 + 73MB uv.exe 拷贝源），release/ 是安装包输出 —— 都不进仓库
+build/
+release/
+
 # 第三方上游仓库（cloud-music-mcp，约 103MB Python 项目，带自有 LICENSE；开源时 README 写克隆指引）
 vendor/
 
