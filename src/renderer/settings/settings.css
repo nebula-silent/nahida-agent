@@ -1,0 +1,988 @@
+/* 步骤 2.11 · 设置视图 + 关于视图（素材：原型 settings.html）
+   通用控件（单选段组 / 开关 / 三色标签 / 金按钮 / 次按钮 / 全局 input / select）已由 2.9 落在 app.css，
+   本文件**不重复定义**，只写设置 / 关于专属的类。
+   分段：① 滚动容器 ② 设置卡 ③ 控件排布 ⑤ 关于卡 … ⑪ 左侧导航（6.6.1；④ 快捷键行已随快捷键卡删除） */
+
+/* ===== ① 滚动容器（设置 / 关于两视图共用；对应原型 #settingsScroll）
+   原型容器上沿有一条 border-b border-white/60 分割线 → 这里落在滚动区上沿 ===== */
+.settings__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px 20px; /* 原型滚动区 px-6 py-5：顶 20 = 分隔线→首卡、底 20 = 末张卡不贴边（2026-09-27 对齐） */
+  border-top: 1px solid rgba(255, 255, 255, .6);
+}
+
+/* ===== ② 设置卡（原型 rounded-[22px] + border-white/70 + bg-white/55 + px-5 py-4）
+   注意：不加玻璃类 —— .view-area 已是一层玻璃，叠第三层会糊 ===== */
+.settings-card {
+  border-radius: var(--r-inner);
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .55);
+  padding: 16px 20px;
+}
+.settings-card + .settings-card { margin-top: 16px; } /* 原型 mt-4 */
+
+.settings-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(14, 59, 46, .85);
+}
+.settings-card__title svg { flex: none; color: var(--brand); }
+
+/* ===== ③ 控件排布（原型 mt-4 grid gap-4/5 lg:grid-cols-2） ===== */
+.settings-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.settings-item { min-width: 0; }
+.settings-item__label {
+  display: block;
+  font-size: 12px;
+  color: rgba(14, 59, 46, .75);
+}
+.settings-item__value { margin-left: 4px; font-weight: 600; color: var(--brand); }
+.settings-item__segs { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- 外观重设计 2026-09-29：强调色（5 预设色块 + 自定义圆形色盘） ---------- */
+.settings-item__swatches {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.swatch {
+  --sw: var(--brand); /* 每块色由渲染内联 --sw 覆盖（预设 brand 色） */
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .9);
+  background: var(--sw);
+  box-shadow: 0 0 0 1px rgba(14, 59, 46, .12), inset 0 1px 2px rgba(255, 255, 255, .4);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.swatch:hover { transform: scale(1.1); }
+.swatch[data-on="true"] {
+  box-shadow: 0 0 0 2px var(--brand-ink), 0 0 10px -2px var(--sw);
+  transform: scale(1.08);
+}
+.swatch-picker {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, .9);
+  box-shadow: 0 0 0 1px rgba(14, 59, 46, .12);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.swatch-picker[data-on="true"] {
+  box-shadow: 0 0 0 2px var(--brand-ink), 0 0 10px -2px var(--brand);
+  transform: scale(1.08);
+}
+.swatch-picker:hover { transform: scale(1.1); }
+.swatch-custom {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+}
+.swatch-custom::-webkit-color-swatch-wrapper { padding: 0; }
+.swatch-custom::-webkit-color-swatch { border: none; border-radius: 50%; }
+.swatch-picker::before {
+  /* 未选自定义时的彩虹占位（选了后原生 swatch 覆盖显示所选色） */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 0deg,
+      #f4b942, #e05d5d, #a55de0, #5d8fe0, #3fae86, #c7d158, #f4b942);
+  pointer-events: none;
+}
+
+
+/* 一列堆叠：原型里同一格放多个控件的两处（陪伴方式右列 / 影像与隐私右列） */
+.settings-item__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 12px;
+  color: rgba(14, 59, 46, .75);
+}
+
+/* 全宽表单控件（原型 w-full；圆角/尺寸/配色由 app.css 的全局 input / select 规则给） */
+.settings-item input[type="text"],
+.settings-item input[type="password"], /* 3.7 模型卡的 API Key 输入框，外观继承 app.css 全局规则 */
+.settings-item select { margin-top: 8px; width: 100%; }
+.settings-item input[type="range"] { margin-top: 12px; }
+
+/* 8.7.22：背景样式=自定义图片的选图行（按钮 + 路径；路径超长省略号） */
+.settings-item__bgimage {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-item__bgimage[hidden] { display: none; } /* display:flex 会覆盖 hidden 的 display:none，必须显式兜底 */
+.settings-item__bgimage .btn-soft { flex: none; }
+.bgimage-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 300;
+  color: rgba(14, 59, 46, .6);
+}
+
+/* 开关行（原型 flex items-center gap-2；用 <label> 包住，点文字也能切） */
+.settings-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(14, 59, 46, .75);
+}
+
+/* 圆角说明块（原型 rounded-2xl + bg-white/70 + px-3 py-2 + 11.5px） */
+.settings-note {
+  margin: 0;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 300; /* 11.5px 小字统一 300（2.8b 规则） */
+  line-height: 1.75;
+  color: rgba(14, 59, 46, .7);
+}
+
+/* ===== ⑤ 关于卡（原型 id="about" 那一块；外层复用 .settings-card） ===== */
+.about-head { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+
+.about-logo {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%; /* 参照原型「纳西妲」干净圆形图标，替换方形卡 */
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: radial-gradient(circle at 30% 26%, #ffffff, var(--brand-soft) 62%, var(--brand-mid));
+  color: var(--brand);
+}
+/* 2026-09-29：关于卡 logo 由四叶草改为立绘头像（与侧边栏/顶栏同图 assets/avatar.png），圆形铺满 */
+.about-logo__img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.about-meta { min-width: 0; }
+.about-title { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: .02em; color: var(--text-strong); }
+.about-sub { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); }
+.about-actions { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+/* 状态条（原型 rounded-2xl + 浅金底 + 金边 + 金字） */
+.about-status {
+  margin: 16px 0 0;
+  border-radius: var(--r-menu);
+  border: 1px solid rgba(229, 210, 154, .7);
+  background: rgba(255, 253, 245, .85);
+  padding: 12px 16px;
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--gold-text);
+}
+
+/* ===== ⑤b 关于页扩展卡（5.2：同人声明 / 开源致谢；外层复用 .settings-card，卡间距走 ：24 的相邻规则） ===== */
+/* 2026-09-29：开源致谢折叠头 —— 标题行整行可点，右端箭头展开时旋转 180°。
+   ⚠️ 选择器只锁定 .about-license__arrow（9.29 修复：原先写 .about-license__toggle svg，
+   把左侧卷轴图标也一起转了） */
+.about-license__toggle {
+  width: 100%;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.about-license__arrow { display: inline-flex; }
+.about-license__arrow svg {
+  flex: none;
+  color: var(--brand);
+  transition: transform var(--t-fast);
+}
+.about-license__toggle[aria-expanded="true"] .about-license__arrow svg { transform: rotate(180deg); }
+
+.about-notice { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.about-notice p {
+  margin: 0;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 300; /* 11.5px 小字统一 300（2.8b 规则） */
+  line-height: 1.75;
+  color: rgba(14, 59, 46, .7);
+}
+
+.about-license { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+/* 9.29 修复：.about-license 显式 display:flex 覆盖了 hidden 的 display:none，导致清单默认收不起来（与 settings-item__bgimage 同款坑） */
+.about-license[hidden] { display: none; }
+.about-license__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 300; /* 11.5px 小字统一 300（2.8b 规则） */
+  color: rgba(14, 59, 46, .7);
+}
+.about-license__name { margin: 0; font-weight: 600; color: rgba(14, 59, 46, .85); }
+.about-license__tag { color: var(--gold-text); }
+.about-license__url { margin: 0; word-break: break-all; color: rgba(14, 59, 46, .55); }
+
+/* ===== ⑤c 关于页 6.8 扩展（运行环境区块 / 联系与反馈） =====
+   颜色只用现有令牌 + 本文件既有的白玻璃 rgba 写法，不引入设计稿绿系 hex（铁律 2） */
+.about-env {
+  margin-top: 16px;
+  border-radius: var(--r-inner);
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .6);
+  padding: 14px 16px;
+}
+.about-env__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(14, 59, 46, .85);
+}
+.about-env__head svg { flex: none; color: var(--brand); }
+.about-env__grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.about-env__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+}
+.about-env__label { flex: none; font-size: 11.5px; font-weight: 600; color: rgba(14, 59, 46, .85); }
+.about-env__value { flex: 1 1 auto; min-width: 0; font-size: 11.5px; font-weight: 300; word-break: break-all; color: var(--text-muted); }
+/* btn-soft 的小号变体：只在运行环境条目里收窄，不影响全局按钮 */
+.about-env__btn { flex: none; margin-left: auto; padding: 3px 10px; font-size: 11px; }
+.about-env__note { margin: 10px 0 0; font-size: 11px; font-weight: 300; color: var(--text-faint); }
+
+/* 点清单（6.8：dot-list；圆点走 --brand-mid，不新增 hex） */
+.dot-list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dot-list li {
+  position: relative;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px 8px 24px;
+  font-size: 11.5px;
+  font-weight: 300; /* 11.5px 小字统一 300（2.8b 规则） */
+  line-height: 1.75;
+  color: rgba(14, 59, 46, .7);
+}
+.dot-list li::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 15px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand-mid);
+}
+
+.about-contact { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.about-contact__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 300; /* 11.5px 小字统一 300（2.8b 规则） */
+  color: rgba(14, 59, 46, .7);
+}
+.about-contact__label { flex: none; font-weight: 600; color: rgba(14, 59, 46, .85); }
+.about-contact__value { word-break: break-all; color: var(--text-muted); }
+/* 9.29：仓库已建 —— 联系与反馈的可点外链（配色对齐全局 a，hover 走 brand-bright） */
+.about-contact__link {
+  word-break: break-all;
+  color: var(--brand);
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+.about-contact__link:hover { color: var(--brand-bright); }
+
+/* ===== ⑥ 模型卡（3.7：独立渲染不走通用渲染，预设来自 IPC；沿用 .settings-card / 全局 input / select，
+   这里只写 3.7 指令 §6.4 点名的三小件 —— 测试按钮行 / 流式提示 / 结果行，不重做卡片外观） ===== */
+
+/* Key 标签旁的「必填」小标 */
+#model-key-required { margin-left: 6px; }
+/* hidden 属性会被 .tag 的 display:inline-flex 覆盖（UA 的 [hidden]{display:none} 特异性更低），
+   不兜住的话 ollama 这类免 Key 厂商也会常驻显示「必填」（首轮截图目检抓到的） */
+#model-key-required[hidden] { display: none; }
+
+/* 8.1 视觉卡：强制视觉开关行 —— 下移留白，落在 API 栅格下边界与「测试连接」之间（2026-09-29 用户反馈） */
+.vision-force-row { margin-top: 12px; }
+
+.model-card__actions {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 该厂商不支持流式（PresetSummary.supportsStreaming=false 时显示，对应 3.6 降级） */
+.model-card__streamwarn {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 300; /* 11.5px 小字统一 300（2.8b 规则） */
+  color: var(--gold-text);
+}
+
+/* 结果行（成功/失败共用底；失败加 --error 换红字，色值对齐聊天状态行错误色） */
+.model-card__result {
+  margin: 12px 0 0;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: rgba(14, 59, 46, .7);
+  word-break: break-all;
+}
+.model-card__result--error { color: #c04545; }
+
+/* 5.1.1（P17 收口）：服务地址必填错误（占 actions 一整行；色值用既有错误红，与结果行失败态一致） */
+.model-card__error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 300;
+  color: #c04545;
+}
+
+/* 5.1.1：三组设置卡共用的保存结果行（挂在 settings-body 末尾，随重渲染一起重建） */
+.ui-save-status {
+  margin: 0;
+  padding: 4px 4px 0;
+  font-size: 11.5px;
+  font-weight: 300;
+  color: rgba(14, 59, 46, .6); /* 对齐 --text-muted 的既有值 */
+  text-align: right;
+}
+.ui-save-status--error { color: #c04545; }
+
+/* ===== ⑦ MCP 服务器卡（4.2） ===== */
+
+/* 列表（每行一条服务器） */
+.mcp-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+
+.mcp-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 10px 12px;
+  font-size: 12px;
+  color: rgba(14, 59, 46, .75);
+}
+.mcp-row__name { font-weight: 600; color: rgba(14, 59, 46, .85); }
+.mcp-row__meta { font-size: 11.5px; font-weight: 300; color: var(--text-muted); }
+.mcp-row__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* 状态点：三态由 data-state 驱动（与 3.8/3.9 的在线点同一套规则）。
+   静态不跳动 —— 这是一份配置列表，不是当前会话的实时状态 */
+.mcp-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: rgba(14, 59, 46, .28); }
+.mcp-dot[data-state="on"] { background: var(--brand); }
+.mcp-dot[data-state="err"] { background: #c04545; }
+
+/* 失败原因占满一行（长报错不挤在名称后面） */
+.mcp-row__error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 300;
+  color: #c04545;
+  word-break: break-all;
+}
+
+/* 添加表单：复用 .settings-grid 的栅格，只补上沿间距 */
+.mcp-form { margin-top: 16px; }
+
+/* 结果行（照 .model-card__result 的规格；失败换红字，色值对齐聊天状态行错误色） */
+.mcp-result {
+  margin: 12px 0 0;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: rgba(14, 59, 46, .7);
+  word-break: break-all;
+}
+.mcp-result--error { color: #c04545; }
+
+.mcp-note { margin-top: 12px; }
+
+/* hidden 兜底：本项目已被这条坑过两次（3.7 的「必填」标 / 3.9 的胶囊），
+   凡带 hidden 的新元素都显式兜一层（UA 的 [hidden]{display:none} 特异性低于带 display 的类） */
+.mcp-result[hidden],
+[data-mcp-when][hidden] { display: none !important; }
+
+/* ===== ⑦b 消息通道卡（8.8）=====
+   行样式沿用 ⑦ MCP 的白玻璃语言；状态点本卡自持一份（.im-dot），不跨卡复用 .mcp-dot */
+.im-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+
+.im-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 10px 12px;
+  font-size: 12px;
+  color: rgba(14, 59, 46, .75);
+}
+.im-row__name { font-weight: 600; color: rgba(14, 59, 46, .85); }
+
+/* 通道 id 小胶囊（与 .tag 区分：非语义标签，只是标识符） */
+.im-row__code {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .8);
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+.im-row__meta { font-size: 11.5px; font-weight: 300; color: var(--text-muted); }
+.im-row__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* 状态点：三态由 data-state 驱动（规格同 .mcp-dot），静态不跳动 */
+.im-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: rgba(14, 59, 46, .28); }
+.im-dot[data-state="on"] { background: var(--brand); }
+.im-dot[data-state="err"] { background: #c04545; }
+
+/* ===== ⑦c 真实通道卡（8.9 飞书 / 钉钉）=====
+   与 .im-row 同一套白玻璃语言，只是多了凭证表单；卡内状态行常驻，测试结果单列一行 */
+.im-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 12px 14px;
+  font-size: 12px;
+  color: rgba(14, 59, 46, .75);
+}
+.im-card__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.im-card__name { font-weight: 600; color: rgba(14, 59, 46, .85); }
+.im-card__head .switch { margin-left: auto; }
+.im-card .settings-note { margin: 0; }
+.im-card .settings-grid { margin-top: 0; }
+.im-card__status { margin: 0; font-size: 11.5px; font-weight: 300; color: var(--text-muted); }
+
+.im-card__result {
+  margin: 0;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: rgba(14, 59, 46, .7);
+  word-break: break-all;
+}
+.im-card__result--error { color: #c04545; }
+/* hidden 兜底（3.7 / 3.9 已踩过两次） */
+.im-card__result[hidden] { display: none !important; }
+
+/* 8.10 微信扫码登录：扫码入口 + 二维码展示区 */
+.im-weixin { display: flex; flex-direction: column; gap: 10px; }
+.im-weixin__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.im-weixin__actions .settings-note { margin: 0; flex: 1 1 200px; }
+
+.im-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 14px 12px;
+}
+/* hidden 兜底（3.7 / 3.9 已踩过两次：display:flex 会盖掉 [hidden]） */
+.im-qr[hidden] { display: none !important; }
+.im-qr__img {
+  box-sizing: border-box; /* 白色内衬算进 200×200（content-box 会撑成 212） */
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 6px;
+}
+.im-qr__img[hidden] { display: none !important; }
+.im-qr__hint {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 300;
+  line-height: 1.7;
+  color: rgba(14, 59, 46, .7);
+  text-align: center;
+  word-break: break-all;
+}
+
+/* 自检注入区：标签一行、字段 + 按钮一行 */
+.im-inject .settings-item__label { display: flex; align-items: center; gap: 6px; }
+.im-inject__fields { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.im-inject__fields input[type="text"] { flex: 1 1 200px; min-width: 0; margin: 0; }
+.im-inject__fields .btn-gold { flex: none; }
+
+.im-inject-result {
+  margin: 0;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: rgba(14, 59, 46, .7);
+  word-break: break-all;
+}
+.im-inject-result--error { color: #c04545; }
+/* hidden 兜底（3.7 / 3.9 已踩过两次） */
+.im-inject-result[hidden] { display: none !important; }
+
+/* ===== ⑦d 技能卡（8.7）=====
+   行样式沿用 ⑦ MCP / ⑦b 消息通道的白玻璃语言；本卡自持 .skills-* 一套，不跨卡复用 .im-* */
+.skills-actions { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.skills-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.skills-list .settings-note { margin: 0; }
+
+.skills-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: var(--r-menu);
+  background: rgba(255, 255, 255, .7);
+  padding: 10px 12px;
+  font-size: 12px;
+  color: rgba(14, 59, 46, .75);
+}
+.skills-row__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.skills-row__head .switch { margin-left: auto; }
+.skills-row__name { font-weight: 600; color: rgba(14, 59, 46, .85); }
+.skills-row__desc { margin: 0; font-size: 11.5px; font-weight: 300; line-height: 1.7; color: rgba(14, 59, 46, .7); }
+.skills-row__meta { margin: 0; font-size: 11px; font-weight: 300; color: var(--text-muted); }
+/* 依赖缺失（frontmatter requires 未满足）：静态标注，不进任何交互 */
+.skills-row__warn { font-size: 11px; font-weight: 300; color: #c04545; }
+
+/* ===== ⑧ 语音卡（4.6） ===== */
+
+/* 「优先使用」独占一格（.settings-grid 是两列，这里只要一个） */
+.voice-preferred { margin-top: 16px; }
+.voice-preferred select { margin-top: 8px; width: 100%; }
+
+.voice-engines { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* 分组标题（语音合成 / 语音识别） */
+.voice-group { margin: 0; font-size: 12px; font-weight: 600; color: rgba(14, 59, 46, .8); }
+
+/* 单个引擎块：与 .settings-card 同一层玻璃语言，但浅一档 */
+.voice-engine {
+  border-radius: var(--r-inner);
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .6);
+  padding: 12px 14px;
+}
+
+.voice-engine__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.voice-engine__name { font-size: 12.5px; font-weight: 600; color: rgba(14, 59, 46, .85); }
+.voice-engine__meta { font-size: 11.5px; font-weight: 300; color: rgba(14, 59, 46, .6); }
+
+/* 不可用原因占一行（长报错不挤在名字后面）；空串不占位 */
+.voice-engine__note { flex-basis: 100%; margin: 0; font-size: 11.5px; font-weight: 300; color: #c04545; word-break: break-all; }
+.voice-engine__note:empty { display: none; }
+
+/* 引擎块内的栅格比外层紧一档 */
+.voice-engine .settings-grid { margin-top: 12px; gap: 12px; }
+/* 标签与「必填」小标同一行 */
+.voice-engine .settings-item__label { display: flex; align-items: center; gap: 6px; }
+/* number 也要撑满（全局规则里没有 number，见 app.css 的改动） */
+.voice-engine .settings-item input[type="number"] { margin-top: 8px; width: 100%; }
+
+/* path 字段：输入框 + 「浏览」一行 */
+.voice-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.voice-row input[type="text"] { flex: 1 1 auto; min-width: 0; margin-top: 0; }
+.voice-row .btn-soft { flex: none; }
+
+/* 字段说明（11.5px 小字统一 300 —— 2.8b 规则） */
+.voice-hint { margin: 6px 0 0; font-size: 11.5px; font-weight: 300; line-height: 1.7; color: rgba(14, 59, 46, .6); }
+
+/* 状态点：与 4.2 的 .mcp-dot **同规则**（有意重复 —— 收敛成通用 .status-dot 要动 4.2 的 CSS，
+   不在本步范围；将来做设计令牌统一时一起收敛） */
+.voice-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: rgba(14, 59, 46, .28); }
+.voice-dot[data-state="on"] { background: var(--brand); }
+.voice-dot[data-state="err"] { background: #c04545; }
+
+/* 结果行（照 .mcp-result 规格） */
+.voice-result {
+  margin: 12px 0 0; border-radius: var(--r-menu); background: rgba(255, 255, 255, .7);
+  padding: 8px 12px; font-size: 11.5px; font-weight: 300; line-height: 1.75;
+  color: rgba(14, 59, 46, .7); word-break: break-all;
+}
+.voice-result--error { color: #c04545; }
+/* hidden 兜底（本项目已被这条坑过两次：3.7 的「必填」标 / 3.9 的胶囊） */
+.voice-result[hidden] { display: none !important; }
+
+/* ===== ⑨ 长期记忆卡 + 人设提示词卡（5.1.2） ===== */
+
+/* textarea 没有全局皮肤（app.css 只管 text/password/number/select），这里补齐同款玻璃底
+   （#persona-text 6.6.2 起改为只读预览 .persona-preview，不再用 textarea） */
+.lt-row__text,
+#up-manual {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .85);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text-strong);
+  resize: vertical;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+.lt-row__text:focus,
+#up-manual:focus { border-color: rgba(18, 141, 107, .55); outline: none; }
+
+/* 条目行：与 .voice-engine 同一层玻璃语言 */
+.lt-list { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+/* 长期记忆本地加密开关（2026-09-29 从影像组迁来）：标题注与条目列表之间，按钮推到行右缘 */
+.lt-encrypt { margin: 12px 0 0; }
+.lt-encrypt .switch { margin-left: auto; }
+
+.lt-row {
+  border-radius: var(--r-inner);
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .6);
+  padding: 10px 12px;
+}
+
+/* 失效行：整行变灰；仍可编辑可恢复（本步只存状态、不判召回） */
+.lt-row.lt-invalid { opacity: .55; }
+.lt-row.lt-invalid .lt-row__text { text-decoration: line-through; text-decoration-color: rgba(14, 59, 46, .35); }
+
+/* 下层控件条：标签 + 触发词 + 重要性 + 置顶 + 失效/恢复 + 删除 */
+.lt-row__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.lt-row__bar input[type="text"] {
+  flex: 1 1 140px;
+  min-width: 0;
+  margin-top: 0;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  font-size: 11.5px;
+}
+.lt-row__bar select { flex: none; width: 64px; padding-top: 6px; padding-bottom: 6px; }
+.lt-row__bar .switch,
+.lt-row__bar .btn-soft { flex: none; }
+
+/* 新增按钮 + 条数提示一行 */
+.lt-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.lt-actions .settings-note { margin: 0; }
+
+/* 整理行（5.1.5）：立即整理 / 备份下拉 / 回滚 + 状态行 + 回执 */
+.lt-tidy { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.lt-tidy__bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.lt-tidy__bar select {
+  flex: 1 1 200px;
+  min-width: 0;
+  margin-top: 0;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  font-size: 11.5px;
+}
+.lt-tidy__bar .btn-gold,
+.lt-tidy__bar .btn-soft { flex: none; }
+.lt-tidy .settings-note { margin: 0; }
+.lt-tidy .lt-result { margin-top: 0; }
+
+/* 结果行（照 .voice-result 规格） */
+.lt-result,
+.persona-result,
+.up-result,
+.weather-result,
+.perm-result,
+.audit-result {
+  margin: 12px 0 0; border-radius: var(--r-menu); background: rgba(255, 255, 255, .7);
+  padding: 8px 12px; font-size: 11.5px; font-weight: 300; line-height: 1.75;
+  color: rgba(14, 59, 46, .7); word-break: break-all;
+}
+.lt-result--error,
+.persona-result--error,
+.up-result--error,
+.weather-result--error,
+.perm-result--error,
+.audit-result--error { color: #c04545; }
+/* hidden 兜底（同上，UA 的 [hidden] 特异性不够） */
+.lt-result[hidden],
+.persona-result[hidden],
+.up-result[hidden],
+.weather-result[hidden],
+.perm-result[hidden],
+.audit-result[hidden] { display: none !important; }
+
+/* 8.2：允许访问的目录卡 —— 条目列表（一行一个目录 + 移除按钮），样式沿用白玻璃语言 */
+.dir-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.dir-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  border-radius: var(--r-menu); background: rgba(255, 255, 255, .7);
+  padding: 10px 12px; font-size: 12px; color: rgba(14, 59, 46, .75);
+}
+.dir-row__path { flex: 1 1 240px; min-width: 0; word-break: break-all; }
+.dir-row .btn-soft { flex: none; }
+
+/* 8.4：操作审计卡 —— 按钮行 + 记录列表（等宽摘要、可滚动） */
+.audit-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.audit-list {
+  margin-top: 12px; max-height: 280px; overflow-y: auto;
+  border-radius: 14px; border: 1px solid rgba(255, 255, 255, .85);
+  background: rgba(255, 255, 255, .5); padding: 8px 12px;
+  font-size: 11.5px; font-weight: 300; line-height: 1.75; color: rgba(14, 59, 46, .78);
+}
+.audit-list[hidden] { display: none !important; }
+.audit-row + .audit-row { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(14, 59, 46, .12); }
+.audit-row__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+.audit-row__time { color: rgba(14, 59, 46, .55); }
+.audit-row__tool { font-weight: 500; }
+.audit-row__tag {
+  border-radius: 999px; padding: 0 8px; background: rgba(14, 59, 46, .08); font-size: 10.5px;
+}
+.audit-row__tag--allow { background: rgba(52, 143, 106, .16); }
+.audit-row__tag--deny { background: rgba(192, 69, 69, .14); color: #c04545; }
+.audit-row__args { margin: 4px 0 0; word-break: break-all; color: rgba(14, 59, 46, .6); }
+
+/* 6.6.2：人设只读预览（玻璃语言与原 textarea 同款，但不可编辑；超长内部滚动） */
+.persona-preview {
+  margin: 14px 0 0;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .85);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text-strong);
+  white-space: pre-wrap;   /* 保留换行 */
+  word-break: break-word;
+  min-height: 52px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.persona-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* 9.x persona v2：三层人设卡（main/soul/canon 各一段预览，层间留白分隔） */
+.persona-part { margin-top: 16px; }
+.persona-part__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.persona-part__name { font-weight: 600; font-size: 13px; color: var(--text-strong); }
+.persona-part__file { font-size: 11px; opacity: .55; }
+.persona-part .persona-preview { margin-top: 8px; max-height: 200px; }
+.persona-part .persona-actions { margin-top: 8px; }
+
+/* ===== ⑨b 用户档案卡（5.1.6）：自动段只读块 + 手写编辑框 ===== */
+
+/* 自动段：只读展示（她始终记得的你），与 textarea 同一层玻璃语言 */
+.up-auto {
+  margin-top: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .85);
+  background: rgba(255, 255, 255, .7);
+  padding: 8px 12px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text-strong);
+  white-space: pre-wrap; /* 档案是 3–6 行正文，保留换行 */
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+/* 手写编辑框（同 .persona-preview 的尺寸规矩）+ 计数 */
+#up-manual { margin-top: 14px; min-height: 150px; }
+.up-count { margin-top: 8px; }
+.up-count--error { color: #c04545; font-weight: 600; }
+
+/* ===== ⑩ 自绘下拉接管设置页 select（6.x：settings.ts 启动区 observer 自动接管，
+   组件与皮肤在 app.css 的 .dd 系列 / studio/dropdown.ts）=====
+   原生 select 被 display:none 隐藏、.dd 顶替入流 —— 下面按容器镜像原 select 的布局规则，
+   新增 / 重排的卡只要沿用这几类容器就自动适配：
+   ① .settings-item 内全宽（镜像 .settings-item select 的 margin-top:8px + width:100%）
+   ② .lt-row__bar 内 64px 紧凑（镜像 .lt-row__bar select）
+   ③ .lt-tidy__bar 内 flex 弹性（镜像 .lt-tidy__bar select） */
+.settings-item .dd { display: block; width: 100%; margin-top: 8px; }
+.settings-item .dd__btn { width: 100%; }
+.lt-row__bar .dd { flex: none; width: 64px; }
+.lt-row__bar .dd__btn,
+.lt-tidy__bar .dd__btn { width: 100%; padding-top: 6px; padding-bottom: 6px; font-size: 11.5px; }
+.lt-tidy__bar .dd { flex: 1 1 200px; min-width: 0; }
+
+/* ===== ⑪ 6.6.1 左侧导航（只新增：settings 视图内双列布局，其它视图不动） =====
+   index.html 结构：.view[data-view=settings] > .view-head + .settings-layout > nav + #settings-body
+   .view 本是 flex column（app.css:192），这里只给 settings 视图内的 layout 容器加横向排布 */
+.settings-layout {
+  flex: 1 1 auto;
+  min-height: 0;          /* 让 #settings-body 的 overflow-y 生效 */
+  display: flex;
+  flex-direction: row;
+}
+
+.settings-nav {
+  flex: 0 0 200px;        /* 固定窄栏（指令 §2.7：180–220px） */
+  min-height: 0;
+  overflow-y: auto;       /* 10 组在 720px 最小高下也够放，兜底小窗 */
+  padding: 20px 8px 20px 24px; /* 与 .settings__body 的 20/24 节奏对齐 */
+  border-top: 1px solid rgba(255, 255, 255, .6); /* 与 .settings__body 上沿分割线同规，横贯整宽 */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-nav__item {
+  border: none;
+  background: transparent;
+  border-radius: var(--r-menu);
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: rgba(14, 59, 46, .7);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.settings-nav__item:hover { background: rgba(255, 255, 255, .5); }
+.settings-nav__item--active,
+.settings-nav__item--active:hover {
+  background: rgba(255, 255, 255, .7); /* 沿用工程既有白玻璃写法（同 .settings-note 底） */
+  color: var(--brand);
+  font-weight: 600;
+}
+
+/* ---------- 9.x：音乐组（网易云 · 连接卡 + 听歌卡） ---------- */
+
+/* 连接卡：状态行（点 + 文案 + 动作按钮） */
+.music-status { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.music-status__dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--text-3, #999); flex-shrink: 0;
+}
+.music-status__dot[data-state="ok"] { background: #3ba776; box-shadow: 0 0 6px rgba(59, 167, 118, .5); }
+.music-status__dot[data-state="warn"] { background: #e0a23c; box-shadow: 0 0 6px rgba(224, 162, 60, .5); }
+.music-status__dot[data-state="err"] { background: #d4574e; box-shadow: 0 0 6px rgba(212, 87, 78, .5); }
+.music-status__dot[data-state="off"] { background: #b8b8b8; }
+.music-status__meta { flex: 1; min-width: 0; }
+.music-status__meta strong { font-size: 14px; color: var(--text-1, #333); }
+.music-status__meta p { margin: 2px 0 0; font-size: 12px; color: var(--text-2, #666); }
+.music-status__nick { color: var(--brand) !important; }
+
+/* 二维码区 */
+.music-qr {
+  display: flex; align-items: center; gap: 16px;
+  margin-top: 12px; padding: 12px;
+  border-radius: var(--r-menu, 12px);
+  background: rgba(255, 255, 255, .7);
+}
+.music-qr[hidden] { display: none; }
+.music-qr__img { width: 128px; height: 128px; border-radius: 8px; background: #fff; }
+.music-qr__meta strong { font-size: 13px; color: var(--text-1, #333); }
+.music-qr__meta p { margin: 4px 0 0; font-size: 12px; color: var(--text-3, #999); }
+
+/* 听歌卡：列表行（封面 + 歌名 + 播放） */
+.music-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.music-track {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--r-menu, 12px);
+  background: rgba(255, 255, 255, .7);
+}
+.music-track__cover {
+  width: 36px; height: 36px; border-radius: 8px; object-fit: cover; flex-shrink: 0;
+}
+.music-track__cover--ph {
+  display: inline-block;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .9), rgba(240, 236, 228, .9));
+}
+.music-track__meta { flex: 1; min-width: 0; }
+.music-track__meta strong {
+  display: block; font-size: 13px; color: var(--text-1, #333);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.music-track__meta span {
+  display: block; font-size: 12px; color: var(--text-3, #999);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* 搜索行 + 反馈行 */
+.music-search-title { margin-top: 18px !important; }
+.music-search { display: flex; gap: 8px; margin-top: 10px; }
+.music-search input { flex: 1; }
+.music-feedback { margin: 8px 0 0; min-height: 16px; font-size: 12px; color: var(--text-2, #666); }

@@ -1,0 +1,24 @@
+/* nahida 玻璃材质基础类 v2
+   来源：《UI设计规范-森林智慧女神.md》§5.1，照搬 原型 home.html 的 .glass / .glass-deep
+   所有卡片一律套这两个类；不允许不透明纯白卡，不允许深色底 */
+
+.glass{
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-deep{
+  background: var(--glass-deep-bg);
+  backdrop-filter: var(--glass-deep-blur);
+  -webkit-backdrop-filter: var(--glass-deep-blur);
+  border: var(--glass-deep-border);
+  color: var(--glass-deep-text);
+}
+
+/* 兜底：不支持 backdrop-filter 时退化为不透明底，别变成透明穿帮（规范 §8.3） */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass{ background: rgba(255,255,255,.92) }
+}

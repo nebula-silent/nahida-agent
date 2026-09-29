@@ -1,0 +1,16 @@
+# 换行统一为 LF —— 换电脑后不同机器的 core.autocrlf 设置不会造成「整个文件都是改动」的假 diff
+* text=auto eol=lf
+
+# Windows 批处理必须 CRLF + UTF-8（chcp 65001），否则别的电脑上中文乱码、goto 标签可能失效
+*.bat text eol=crlf
+
+# 二进制资源不做换行转换
+*.png binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+
+# 锁文件不参与 diff（体积大、人不会读）
+package-lock.json -diff

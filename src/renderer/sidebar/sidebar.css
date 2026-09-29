@@ -1,0 +1,164 @@
+/* nahida 侧边栏 v2 · 玻璃拟态
+   依据：《UI设计规范-森林智慧女神.md》§5.2，视觉照搬 原型 home.html 侧边栏（Tailwind 已翻译为原生 CSS）
+   旧深色版备份：.backup/renderer-v1-dark-20260926/sidebar/sidebar.css */
+
+/* ===== 内层骨架：品牌卡 + 导航一起滚动，版本卡常驻底部 ===== */
+.sidebar__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 12px;
+  overflow-y: auto;
+}
+
+/* ===== 品牌区（内嵌玻璃卡：圆角 --r-inner，白底半透明 + 白描边） ===== */
+.brand {
+  flex: 0 0 auto;
+  border-radius: var(--r-inner);
+  border: 1px solid rgba(255,255,255,.7);
+  background: rgba(255,255,255,.5);
+  padding: 16px 12px;
+  text-align: center;
+}
+.brand__avatar {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+}
+.brand__avatar-core {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255,255,255,.8);
+  background: radial-gradient(circle at 32% 28%, #f6fffb, #c3efdc 60%, #8fd9bd);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 头像：立绘铺满圆形容器（2026-09-26 换 assets/avatar.png，替代四叶草 SVG） */
+.brand__avatar-core img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-pill);
+  object-fit: cover;
+}
+
+/* 在线点：右下角 16×16，白描边，跑 pulse（@keyframes 在 app.css） */
+.brand__dot {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-pill);
+  border: 2px solid #fff;
+  background: #10b981;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.brand__name {
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--text-strong);
+}
+.brand__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255,255,255,.7);
+  background: rgba(255,255,255,.7);
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--brand);
+}
+
+/* 状态胶囊里的叶子图标（3.8：替代 emoji，颜色继承胶囊） */
+.brand__status-ico { display: inline-flex; flex: 0 0 auto; }
+
+/* 胶囊跟随 model.status（3.8）：离线用聊天状态行同一个红 #c04545 */
+.brand__status[data-state="error"] { color: #c04545; border-color: rgba(192,69,69,.35); }
+.brand__status[data-state="connecting"] { color: var(--gold-text); }
+
+/* 在线点跟随 model.status（3.8）：离线/未连接变灰停跳，连接中变金 */
+.brand__dot[data-state="error"],
+.brand__dot[data-state="unknown"] { background: rgba(14,59,46,.35); animation: none; }
+.brand__dot[data-state="connecting"] { background: var(--gold); }
+
+/* ===== 导航（10 项，规范 .menu-item：hover 平移 2px，激活绿→金渐变） ===== */
+.sidebar__nav {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-menu);
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-strong);
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    transform var(--t-fast),
+    border-color var(--t-fast),
+    box-shadow var(--t-fast);
+}
+.menu-item:hover {
+  background: rgba(255,255,255,.7);
+  border-color: rgba(216,180,95,.45);
+  transform: translateX(2px);
+}
+.menu-item.active {
+  background: linear-gradient(100deg, rgba(169,231,205,.9), rgba(242,221,164,.55));
+  border-color: rgba(216,180,95,.75);
+  box-shadow: 0 14px 26px -18px rgba(18,141,107,.85);
+}
+.menu-item__icon {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--brand);   /* 图标 17px，品牌绿 */
+}
+.menu-item__icon svg { width: 17px; height: 17px; }
+
+/* ===== 底部版本卡（.glass-deep 深色玻璃挂在 HTML 上，这里只管排版） ===== */
+.sidebar__footer {
+  flex: 0 0 auto;
+  margin: 0 16px 16px;
+  border-radius: 20px;
+  padding: 12px;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.6;
+}
+.sidebar__footer-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--gold-soft);   /* #f2dda4 */
+}
+/* 标题行叶子图标（lucide:leaf，13×13）：颜色继承标题的金色，不单独写死 */
+.sidebar__footer-ico { display: inline-flex; flex: 0 0 auto; }
+.sidebar__footer-sub { margin-top: 4px; color: rgba(223,245,234,.8); }
+
+/* 底部运行状态卡失败态（3.8）：不加这条，「共鸣失败」和「共鸣稳定」长得一样 */
+.sidebar__footer[data-state="error"] .sidebar__footer-title { color: #f0a68e; }
+.sidebar__footer[data-state="error"] .sidebar__footer-sub { color: rgba(240,166,142,.85); }
+.sidebar__footer[data-state="connecting"] .sidebar__footer-sub { color: rgba(242,221,164,.85); }

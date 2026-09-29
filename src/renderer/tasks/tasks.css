@@ -1,0 +1,194 @@
+/* 2.9 任务视图（今日委托）样式
+   素材源：原型 tasks.html（原型 class 已翻译为原生 CSS）
+   结构：视图头（.view-head，共用）→ 进度条 + 标签页行（.tasks__subhead）→ 卡片滚动区（.tasks__body）
+   注意：卡片不走 .glass（.view-area 已是一层玻璃，玻璃套玻璃会发糊）
+   5.11 v1 占位：任务数据已收敛，视图只剩 .tasks__placeholder 占位（下方 ④）；
+   subhead / bar / tabs / hide / 卡片样式全保留，开闸后直接复用 */
+
+/* ===== ① 进度条 + 标签页行 ===== */
+.tasks__subhead {
+  flex: 0 0 auto;
+  padding: 0 24px 16px; /* 原型头块 px-6 py-4（2026-09-27 对齐） */
+  margin-bottom: 20px; /* 原型滚动区 py-5 顶 = 分隔线→首卡 20px（曾误写 16px） */
+  border-bottom: 1px solid rgba(255, 255, 255, .6);
+}
+
+.tasks__bar {
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, .8);
+}
+.tasks__bar-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--brand), var(--brand-soft));
+  transition: width .3s ease;
+}
+
+.tasks__tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  overflow-x: auto; /* 原型 overflow-x-auto；.no-sb 已隐藏滚动条 */
+}
+.tasks__badge { font-size: 11px; font-weight: 300; opacity: .8; }
+
+/* ===== ② 视图头右侧：隐藏已完成 ===== */
+.tasks__hide {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-body);
+  cursor: pointer;
+}
+
+/* ===== ③ 卡片滚动区 ===== */
+.tasks__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 24px 20px; /* 原型滚动区 px-6 py-5（2026-09-27 对齐） */
+}
+
+.tasks__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* 原型 space-y-3 */
+}
+
+/* ===== ④ v1 占位（5.11）：任务数据收敛后的空态（居中写法参考 studio.css 的 .studio__placeholder） ===== */
+.tasks__placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+/* 显式规则：display:flex/grid 会覆盖 hidden 属性的 UA display:none，必须补回 */
+.tasks__panel[hidden] { display: none; }
+.tasks__panel--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* 原型 md:grid-cols-2 */
+  gap: 12px;
+}
+
+/* 「隐藏已完成」打开时，已完成卡整张不显示（原型用 visibility + 高度清零，这里用 display 更干净） */
+.tasks__body.tasks--hide-done .task-card[data-done="true"] { display: none; }
+
+/* ===== ④ 任务卡 ===== */
+.task-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-radius: var(--r-inner);          /* 原型 rounded-[22px] */
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .55);
+  transition: border-color var(--t-fast), background var(--t-fast), opacity var(--t-fast);
+}
+.task-card:hover {
+  border-color: rgba(216, 180, 95, .65);
+  background: rgba(255, 255, 255, .72);
+}
+
+/* 圆形勾选框 22px */
+.task-check {
+  flex: none;
+  display: flex;
+  height: 22px;
+  width: 22px;
+  margin-top: 2px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  border: 1.5px solid rgba(18, 141, 107, .55);
+  background: rgba(255, 255, 255, .8);
+  color: #fff;
+  transition: all var(--t-fast);
+}
+.task-check svg { width: 14px; height: 14px; opacity: 0; transition: opacity var(--t-fast); }
+.task-check:hover { border-color: rgba(18, 141, 107, .9); }
+
+/* 已完成态：整卡降透明 + 标题删除线 + 勾选框绿底白勾 */
+.task-card[data-done="true"] { opacity: .62; }
+.task-card[data-done="true"] .task-card__title {
+  text-decoration: line-through;
+  text-decoration-color: rgba(18, 141, 107, .6);
+}
+.task-card[data-done="true"] .task-check {
+  background: linear-gradient(120deg, var(--brand), var(--brand-bright));
+  border-color: #fff;
+}
+.task-card[data-done="true"] .task-check svg { opacity: 1; }
+
+.task-card__body { flex: 1 1 auto; min-width: 0; }
+.task-card__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.task-card__title { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-strong); }
+.task-card__desc { margin: 6px 0 0; font-size: 12.5px; line-height: 1.75; color: var(--text-body); }
+
+/* 元信息行（约 30 分钟 · 优先级 中 · 净善宫 · 东露台） */
+.task-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 11.5px;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+.task-card__meta > span { display: inline-flex; align-items: center; gap: 4px; }
+.task-card__meta svg { width: 13px; height: 13px; }
+
+/* 卡内进度条（「校订草木志」用；花园卡也用） */
+.task-card__progress { margin-top: 12px; }
+.task-card__progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 300;
+  color: var(--text-body);
+}
+.task-card__progress-pct { font-weight: 600; color: var(--brand); }
+.task-card__progress-pct--gold { color: var(--gold-text); }
+
+.task-progress {
+  height: 8px;
+  margin-top: 6px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, .8);
+}
+.task-progress__fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--brand-bright), var(--brand-soft));
+}
+.task-progress__fill--gold { background: linear-gradient(90deg, var(--gold), var(--gold-soft)); }
+
+/* ===== ⑤ 花园培育卡（两列网格里的竖排卡，原型结构不同） ===== */
+.task-card--garden { display: block; }
+.task-card__garden-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.task-card__sub {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+.task-card__note {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 16px;              /* 原型 rounded-2xl = 16px */
+  background: rgba(255, 255, 255, .7);
+  font-size: 11.5px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: var(--text-body);
+}

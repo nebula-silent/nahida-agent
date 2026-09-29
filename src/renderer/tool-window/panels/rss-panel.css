@@ -1,0 +1,14 @@
+/* 8.7.19：RSS 阅读器面板样式。
+   只写本工具的类（统一加 .rss_ 前缀），复用 .tool-tool / .btn-soft 等全局类，禁止改动 tool-window.css 与其它面板。 */
+.rss_body { display: grid; grid-template-columns: 200px 1fr; gap: 12px; margin-top: 8px; min-height: 0; }
+.rss_feeds { display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; }
+.rss_feed { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.7); background: #fff; }
+.rss_feed.is-active { border-color: rgba(18,141,107,.6); background: #eaf9f0; }
+.rss_feed__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text-strong); cursor: pointer; }
+.rss_feed__del { border: 0; background: none; color: rgba(14,59,46,.5); cursor: pointer; padding: 0 2px; }
+.rss_items { display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; }
+.rss_article { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.7); background: #fff; text-decoration: none; }
+.rss_article:hover { border-color: rgba(216,180,95,.6); }
+.rss_article__title { font-size: 13px; font-weight: 600; color: var(--text-strong); }
+.rss_article__meta { font-size: 11px; color: rgba(14,59,46,.5); }
+.rss_article__sum { font-size: 12px; color: rgba(14,59,46,.7); }

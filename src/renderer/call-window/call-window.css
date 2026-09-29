@@ -1,0 +1,175 @@
+/* 语音通话独立窗（微信式）。
+   色板 / 圆角 / 阴影全走 tokens.css；错误红 #c04545 与全项目惯例一致（保持红）。
+   布局：窗口全透明 → .cw-card 圆角玻璃卡纵向 flex（状态在上 / 声波环居中 / 挂断在下）。
+   ⚠️ duration / error 写了隐式 display 场景，补 [hidden] 兜底（call.css 旧坑同款）。 */
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent; /* 窗口全透明，卡片自带底色 */
+  user-select: none;
+}
+
+#cw-stage {
+  height: 100%;
+  padding: 22px;
+  box-sizing: border-box;
+  display: flex;
+}
+
+/* ===== 玻璃卡：整窗一张卡，浅色玻璃拟态 ===== */
+.cw-card {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 38px 30px 44px;
+  box-sizing: border-box;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, .85);
+  background: linear-gradient(168deg, #f6fcf8 0%, #eaf6f0 52%, #eefaf4 100%);
+  box-shadow:
+    0 34px 70px -34px rgba(14, 59, 46, .5),
+    inset 0 1px 0 rgba(255, 255, 255, .95);
+  overflow: hidden;
+  -webkit-app-region: drag; /* 无边框窗：整卡可拖动换位（挂断钮单独 no-drag） */
+}
+
+/* 装饰柔光块（blur + 卡内裁切） */
+.cw-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(58px);
+  opacity: .6;
+  pointer-events: none;
+}
+.cw-blob--a { width: 260px; height: 260px; top: -90px; right: -70px; background: rgba(169, 231, 205, .85); }
+.cw-blob--b { width: 230px; height: 230px; bottom: -80px; left: -60px; background: rgba(255, 255, 255, .95); }
+
+/* ===== 状态行（头像上方）：聆听中 / 思考中 / 回答中 ===== */
+.cw-status {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 400;
+  color: var(--text-strong);
+  letter-spacing: .04em;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: center;
+}
+.cw-status.--error { color: #c04545; }
+
+.cw-duration {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums; /* 秒数跳动时宽度不抖 */
+}
+.cw-duration[hidden] { display: none; }
+
+/* ===== 声波环 + 头像 ===== */
+.cw-visual {
+  position: relative;
+  width: 288px;
+  height: 288px;
+  margin: auto 0; /* 纵向吃掉剩余空间，环恒居中 */
+  display: grid;
+  place-items: center;
+}
+
+.cw-ring { position: absolute; inset: 0; }
+
+/* 单根声波条：定位在环心，旋转 + 推出 + 伸缩全走 transform（不触发布局）。
+   scaleY 数值由 call-window.ts 每帧写 inline transform。 */
+.cw-bar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 30px;
+  margin: -15px 0 0 -2.5px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--brand-bright), var(--brand));
+  opacity: .9;
+  will-change: transform;
+}
+
+/* 头像光晕：状态色径向渐变 + 呼吸（data-state 换色） */
+.cw-avatar-glow {
+  position: absolute;
+  width: 176px;
+  height: 176px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(169, 231, 205, .6) 0%, rgba(169, 231, 205, 0) 70%);
+  animation: cw-pulse 1.8s ease-in-out infinite;
+}
+
+.cw-avatar {
+  position: relative;
+  z-index: 2;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(255, 255, 255, .92);
+  box-shadow: 0 18px 36px -18px rgba(14, 59, 46, .55);
+  background: #fff;
+}
+
+@keyframes cw-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: .6; }
+}
+
+/* 状态 → 光晕/声波条换色（思考 = 金，出错 = 红，出错不呼吸） */
+#cw-stage[data-state="THINKING"] .cw-avatar-glow {
+  background: radial-gradient(circle, rgba(240, 200, 130, .6) 0%, rgba(240, 200, 130, 0) 70%);
+}
+#cw-stage[data-state="SPEAKING"] .cw-avatar-glow {
+  background: radial-gradient(circle, rgba(18, 141, 107, .45) 0%, rgba(18, 141, 107, 0) 70%);
+}
+#cw-stage[data-state="ERROR"] .cw-avatar-glow {
+  background: radial-gradient(circle, rgba(192, 69, 69, .4) 0%, rgba(192, 69, 69, 0) 70%);
+  animation: none;
+}
+#cw-stage[data-state="IDLE"] .cw-avatar-glow { animation: none; opacity: .5; }
+
+/* ===== 错误行：红字人话（引擎不可用 / 识别失败等），与挂断同进退 ===== */
+.cw-error {
+  margin: 14px 0 0;
+  max-width: 300px;
+  font-size: 12px;
+  font-weight: 300;
+  line-height: 1.6;
+  color: #c04545;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: center;
+}
+.cw-error[hidden] { display: none; }
+
+/* ===== 挂断按钮：微信式红色大圆钮，单击直接挂断 ===== */
+.cw-hangup {
+  margin-top: 18px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #d9695f, #c04545);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 18px 34px -16px rgba(192, 69, 69, .75);
+  transition: all var(--t-fast);
+  -webkit-app-region: no-drag; /* 拖动区内的可点元素必须排除，否则点不下去 */
+}
+.cw-hangup:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 40px -16px rgba(192, 69, 69, .85);
+}
+.cw-hangup:active { transform: translateY(0); }

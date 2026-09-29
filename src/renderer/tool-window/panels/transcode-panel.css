@@ -1,0 +1,6 @@
+/* 8.7.20：音视频转换面板样式。只写本工具的类（统一 .trans_ 前缀），
+   复用全局 .tool-tool / .btn-soft / .lbl-inline，禁止改动 tool-window.css 与其它面板。 */
+.trans_tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.trans_tab { padding: 7px 14px; border-radius: var(--r-pill); border: 1px solid rgba(255,255,255,.8); background: transparent; color: var(--text-strong); cursor: pointer; }
+.trans_tab.is-active { background: linear-gradient(120deg, #128d6b, #3fbf95); border-color: rgba(255,255,255,.85); color: #fff; }
+.trans_ffmpeg { font-size: 11px; color: rgba(14,59,46,.55); }

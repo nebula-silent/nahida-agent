@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<!-- 8.7.7：工具箱 · 工具独立子窗口（通用壳）
+     ur 参数由主进程注入：?t=<id>&title=<名称>&sub=<出处>&kind=<launcher|self>&hint=<已选目录，可空>
+     无边框自绘标题栏（整条 drag，交互按钮 no-drag），复用主窗口的窗口控制 IPC（minimize/close）
+     面板正文本期为「功能接入中」占位；各工具的落地实现在后续版本拉取开源实现后逐个替换 -->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工具箱 · 工具窗口</title>
+  <link rel="stylesheet" href="../ui/tokens.css" />
+  <link rel="stylesheet" href="../ui/glass.css" />
+  <link rel="stylesheet" href="../ui/base.css" />
+  <link rel="stylesheet" href="./tool-window.css" />
+  <!-- 8.7.17-20：跨进程工具的独立面板样式（各工具一个文件，互不干扰） -->
+  <link rel="stylesheet" href="./panels/clipboard.css" />
+  <link rel="stylesheet" href="./panels/pdf-panel.css" />
+  <link rel="stylesheet" href="./panels/rss-panel.css" />
+  <link rel="stylesheet" href="./panels/transcode-panel.css" />
+</head>
+<body>
+  <div id="tool-root">
+    <!-- 标题栏：drag 区；关闭点 X 走 window:nahida.close()（preload 已暴露） -->
+    <header id="tool-titlebar">
+      <span id="tool-titlebar-icon" class="tool-titlebar-icon" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </span>
+      <span id="tool-title" class="tool-title"></span>
+      <span class="tool-titlebar__spacer"></span>
+      <button type="button" class="icon-btn no-drag" id="tool-min" title="最小化" aria-label="最小化">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+      </button>
+      <button type="button" class="icon-btn no-drag" id="tool-close" title="关闭" aria-label="关闭">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </header>
+
+    <!-- 面板正文：占位（功能接入后逐个替换为真实面板） -->
+    <main id="tool-body" class="no-sb">
+      <section id="tool-hero" class="tool-hero glass">
+        <span id="tool-hero-icon" class="tool-hero__icon" aria-hidden="true"></span>
+        <div class="tool-hero__meta">
+          <h2 id="tool-hero-title" class="tool-hero__title"></h2>
+          <p id="tool-hero-sub" class="tool-hero__sub"></p>
+        </div>
+      </section>
+
+      <section id="tool-panel" class="tool-panel">
+        <div id="tool-hint" class="tool-hint" hidden></div>
+
+        <!-- 8.7.9：单位换算（自研 · 换算因子为国际标准常量，前端直接计算，零依赖零网络） -->
+        <section id="panel-convert" class="tool-tool" hidden>
+          <div class="tool-tool__vbox">
+            <div class="tool-tool__bar">
+              <label class="convert__cat" aria-label="换算类别">
+                <select id="convert-cat">
+                  <option value="length">长度</option>
+                  <option value="weight">重量</option>
+                  <option value="area">面积</option>
+                  <option value="data">数据大小</option>
+                  <option value="speed">速度</option>
+                  <option value="temperature">温度</option>
+                </select>
+              </label>
+              <span class="tool-tool__spacer"></span>
+              <span id="convert-status" class="tool-tool__status">输入数值即可换算</span>
+            </div>
+            <div class="convert__row">
+              <span class="convert__cell">
+                <input id="convert-from-value" class="convert__input" type="number" step="any" inputmode="decimal" placeholder="数值" />
+                <select id="convert-from-unit" class="convert__unit" aria-label="源单位"></select>
+              </span>
+              <span class="convert__eq" aria-hidden="true">=</span>
+              <span class="convert__cell">
+                <input id="convert-to-value" class="convert__input" type="text" readonly placeholder="结果" />
+                <select id="convert-to-unit" class="convert__unit" aria-label="目标单位"></select>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8.7.10：批量重命名（自研 · 选目录→规则→预览→执行；改名在主进程安全校验） -->
+        <section id="panel-rename" class="tool-tool" hidden>
+          <div class="tool-tool__vbox">
+            <div class="rename__rules">
+              <label class="rename__rule">查找<input id="rename-find" class="rename__rule-in" placeholder="要替换的文本" spellcheck="false" /></label>
+              <label class="rename__rule">替换为<input id="rename-repl" class="rename__rule-in" placeholder="替换成（留空=删除）" spellcheck="false" /></label>
+              <label class="rename__rule">前缀<input id="rename-prefix" class="rename__rule-in" placeholder="加在开头" spellcheck="false" /></label>
+              <label class="rename__rule">后缀<input id="rename-suffix" class="rename__rule-in" placeholder="加在末尾" spellcheck="false" /></label>
+            </div>
+            <div class="tool-tool__bar">
+              <button type="button" class="btn-soft" id="rename-pick">选择目录</button>
+              <span id="rename-dir" class="rename__dir" title="">未选择目录</span>
+              <span class="tool-tool__spacer"></span>
+              <button type="button" class="btn-soft" id="rename-run" disabled>执行重命名</button>
+            </div>
+            <p id="rename-status" class="tool-tool__status">选择一个目录，再设置重命名规则即可预览</p>
+            <div class="rename__table-wrap">
+              <table class="rename__table">
+                <thead><tr><th>原文件名</th><th></th><th>新文件名</th><th>状态</th></tr></thead>
+                <tbody id="rename-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8.7.11：二维码生成（自研 · qrcode 库纯前端渲染） -->
+        <section id="panel-qrcode" class="tool-tool" hidden>
+          <div class="tool-tool__vbox">
+            <label class="lbl">文本 / 链接</label>
+            <textarea id="qr-text" class="tool-tool__input" rows="4" spellcheck="false" placeholder="输入要生成二维码的文本或链接…"></textarea>
+            <div class="tool-tool__bar">
+              <button type="button" class="btn-soft" id="qr-gen">生成二维码</button>
+              <span class="tool-tool__spacer"></span>
+              <button type="button" class="btn-soft" id="qr-download" hidden>下载 PNG</button>
+            </div>
+            <div class="preview-box"><img id="qr-img" class="preview-box__img" alt="二维码" hidden /></div>
+            <p id="qr-status" class="tool-tool__status">输入内容后点击生成；全部在本地完成，不上传</p>
+          </div>
+        </section>
+
+        <!-- 8.7.12：便签（自研 · localStorage 本地持久化） -->
+        <section id="panel-note" class="tool-tool" hidden>
+          <div class="tool-tool__vbox">
+            <div class="note__composer">
+              <textarea id="note-input" class="tool-tool__input" rows="2" placeholder="记点什么…（Ctrl+Enter 保存）" spellcheck="false"></textarea>
+              <button type="button" class="btn-soft" id="note-add">添加</button>
+            </div>
+            <div id="note-list" class="note__list no-sb"></div>
+          </div>
+        </section>
+
+        <!-- 8.7.13：番茄钟（自研 · 纯前端计时） -->
+        <section id="panel-pomodoro" class="tool-tool" hidden>
+          <div class="tool-tool__vbox pomo__center">
+            <div id="pomo-time" class="pomo__time">25:00</div>
+            <p id="pomo-label" class="pomo__label">专注</p>
+            <div class="tool-tool__bar pomo__btns">
+              <button type="button" class="btn-soft" id="pomo-start">开始</button>
+              <button type="button" class="btn-soft" id="pomo-reset">重置</button>
+            </div>
+            <label class="pomo__dur">每轮时长
+              <select id="pomo-dur">
+                <option value="5">5 分</option>
+                <option value="15">15 分</option>
+                <option value="25" selected>25 分</option>
+                <option value="45">45 分</option>
+                <option value="60">60 分</option>
+              </select>
+            </label>
+            <p id="pomo-status" class="tool-tool__status">开始一段专注计时</p>
+          </div>
+        </section>
+
+        <!-- 8.7.14：日历（自研 · 纯前端月视图） -->
+        <section id="panel-calendar" class="tool-tool" hidden>
+          <div class="tool-tool__vbox">
+            <div class="tool-tool__bar">
+              <button type="button" class="icon-btn" id="cal-prev" aria-label="上月">‹</button>
+              <span id="cal-title" class="cal__title"></span>
+              <button type="button" class="icon-btn" id="cal-next" aria-label="下月">›</button>
+              <span class="tool-tool__spacer"></span>
+              <button type="button" class="btn-soft" id="cal-today">今天</button>
+            </div>
+            <div class="cal__head">
+              <span class="cal__dow">日</span><span class="cal__dow">一</span><span class="cal__dow">二</span><span class="cal__dow">三</span><span class="cal__dow">四</span><span class="cal__dow">五</span><span class="cal__dow">六</span>
+            </div>
+            <div id="cal-grid" class="cal__grid"></div>
+          </div>
+        </section>
+
+        <!-- 8.7.15：图片格式转换（自研 · canvas 浏览器内完成，不上传） -->
+        <section id="panel-img-convert" class="tool-tool" hidden>
+          <div class="tool-tool__vbox">
+            <div class="tool-tool__bar">
+              <button type="button" class="btn-soft" id="imgc-pick">选择图片</button>
+              <label class="lbl-inline">转为
+                <select id="imgc-format">
+                  <option value="image/png">PNG</option>
+                  <option value="image/jpeg">JPEG</option>
+                  <option value="image/webp">WebP</option>
+                </select>
+              </label>
+              <span class="tool-tool__spacer"></span>
+              <button type="button" class="btn-soft" id="imgc-save" hidden>下载转换结果</button>
+            </div>
+            <input id="imgc-file" type="file" accept="image/*" hidden />
+            <div class="preview-box"><img id="imgc-preview" class="preview-box__img" alt="预览" hidden /></div>
+            <p id="imgc-status" class="tool-tool__status">选择本地图片即可转换格式（浏览器内完成，不上传）</p>
+          </div>
+        </section>
+
+        <!-- 8.7.17-20：跨进程工具面板 —— 空容器；DOM 由各自 panels/*.ts 的 init* 用 innerHTML 自建（并行开发零冲突） -->
+        <section id="panel-clipboard" class="tool-tool" hidden></section>
+        <section id="panel-pdf-tool" class="tool-tool" hidden></section>
+        <section id="panel-rss" class="tool-tool" hidden></section>
+        <section id="panel-transcode" class="tool-tool" hidden></section>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="./tool-window.ts"></script>
+</body>
+</html>

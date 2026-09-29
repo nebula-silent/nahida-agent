@@ -1,0 +1,6 @@
+.clip_list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; max-height: 360px; overflow-y: auto; }
+.clip_item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.7); background: #fff; }
+.clip_item--pin { border-color: rgba(216,180,95,.7); }
+.clip_item__text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; font-size: 13px; color: var(--text-strong); }
+.clip_item__meta { flex: 0 0 auto; font-size: 11px; color: rgba(14,59,46,.55); }
+.clip_item__pin { flex: 0 0 auto; padding: 4px 10px; font-size: 12px; }

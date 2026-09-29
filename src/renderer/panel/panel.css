@@ -1,0 +1,114 @@
+/* nahida 右栏状态面板 v2（2.8）
+   素材源：5 个原型 HTML 右栏原文（原型 {home,tasks,studio,memory,settings}.html）
+   结构参考《界面还原清单》§1.5
+   #panel 本身不是玻璃容器（原型里 aside 无玻璃），只做「透明滚动列」；
+   每张卡各自 .glass，玻璃层数 = 1（避免 panel + card 双层 backdrop-filter 发糊） */
+
+/* ===== 卡片外壳（与 .glass 搭配使用） ===== */
+.panel-card {
+  flex: 0 0 auto;               /* 列内不被压扁 */
+  border-radius: var(--r-card); /* 24px，原型 rounded-[24px] */
+  padding: var(--sp-5);         /* 20px，原型 p-5 */
+}
+
+/* 卡头：标题 + 右侧（状态词徽标 / 图标） */
+.panel-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.panel-card__title { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: rgba(14, 59, 46, .8); }
+
+/* 状态词徽标：宁静 / 专注 / 陪伴中 / 安静 / 本周 */
+.panel-card__badge {
+  flex: 0 0 auto;
+  border-radius: var(--r-pill);
+  border: 1px solid #d1fae5;
+  background: #ecfdf5;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 300;
+  color: #0d7a5b;
+}
+
+/* ===== ① 角色状态：三条指标 ===== */
+.panel-metrics { margin-top: var(--sp-4); display: flex; flex-direction: column; gap: 14px; }
+.panel-metric__row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-body); }
+.panel-metric__value { font-weight: 600; color: var(--text-strong); }
+.panel-metric__value--gold { color: var(--gold-text); }
+.panel-metric__track { margin-top: 6px; height: 8px; border-radius: var(--r-pill); background: rgba(255, 255, 255, .8); }
+.panel-metric__fill { height: 100%; border-radius: var(--r-pill); }
+.panel-metric__fill--green { background: linear-gradient(90deg, #3fbf95, #a9e7cd); }
+.panel-metric__fill--gold  { background: linear-gradient(90deg, #d8b45f, #f2dda4); }
+.panel-metric__fill--deep  { background: linear-gradient(90deg, #128d6b, #7ed0b0); }
+
+/* 说明块（半透明白底 / 16px 圆角） */
+.panel-note {
+  margin: var(--sp-4) 0 0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .6);
+  padding: 10px 12px;
+  font-size: 11.5px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: var(--text-body);
+}
+/* 金色提示块（原型 border-[#e5d29a]/70 bg-[#fffdf5]/80） */
+.panel-note--gold {
+  border: 1px solid rgba(229, 210, 154, .7);
+  background: rgba(255, 253, 245, .8);
+  color: var(--gold-text);
+}
+
+/* ===== ② 羁绊值：金色圆环 + 大数字 ===== */
+.panel-bond { margin-top: 12px; display: flex; align-items: center; gap: 16px; }
+.panel-bond__ring { flex: 0 0 96px; width: 96px; height: 96px; transform: rotate(-90deg); }
+.panel-bond__value { margin: 0; font-size: 26px; font-weight: 600; line-height: 1; color: var(--gold-text); }
+.panel-bond__value span { font-size: 14px; }
+.panel-bond__lines { margin-top: 8px; }
+.panel-bond__lines p { margin: 0; font-size: 11.5px; font-weight: 300; line-height: 1.6; color: var(--text-muted); }
+
+/* 细进度条（羁绊值卡底部「还差 18%」） */
+.panel-bar { margin-top: var(--sp-4); }
+.panel-bar__row { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 300; color: var(--text-muted); }
+.panel-bar__track { margin-top: 6px; height: 8px; border-radius: var(--r-pill); background: rgba(255, 255, 255, .8); }
+.panel-bar__fill { height: 100%; border-radius: var(--r-pill); background: linear-gradient(90deg, #d8b45f, #f2dda4); }
+
+/* ===== ③ 心情：当前值 + chip ===== */
+.panel-mood__current { flex: 0 0 auto; font-size: 11.5px; font-weight: 300; color: #0d7a5b; }
+.panel-mood__chips { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.mood-chip {
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(216, 180, 95, .5);
+  background: rgba(255, 255, 255, .72);
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text-strong);
+  cursor: default;
+  transition: all var(--t-fast);
+}
+.mood-chip[data-active="true"] {
+  border-color: rgba(255, 255, 255, .8);
+  background: linear-gradient(120deg, #128d6b, #3fbf95);
+  color: #fff;
+  box-shadow: 0 12px 22px -16px rgba(18, 141, 107, .9);
+}
+/* 只有聊天视图的 chip 可点（原型 home.html 独有） */
+button.mood-chip { cursor: pointer; }
+button.mood-chip:hover { border-color: rgba(18, 141, 107, .6); }
+
+/* ===== ④ 时间与天气 ===== */
+.panel-weather__head-icon { display: flex; color: var(--gold); }
+.panel-weather__time { margin: 8px 0 0; font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: .02em; color: var(--text-strong); }
+.panel-weather__date { margin: 4px 0 0; font-size: 11.5px; font-weight: 300; color: var(--text-muted); }
+.panel-weather__rows { margin-top: var(--sp-4); display: flex; flex-direction: column; gap: 8px; }
+.panel-weather__row { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(14, 59, 46, .75); }
+.panel-weather__icon { display: flex; flex: 0 0 auto; }
+.panel-weather__icon--gold { color: var(--gold); }
+.panel-weather__icon--green { color: var(--brand); }
+
+/* ===== ⑤ 存档概览：2×2 数据格（5.5.2 起数据源 = s.memory 存档统计） ===== */
+.panel-overview { margin-top: var(--sp-4); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.panel-overview__cell { border-radius: 16px; background: rgba(255, 255, 255, .6); padding: 12px 8px; text-align: center; }
+.panel-overview__value { margin: 0; font-size: 18px; font-weight: 600; color: var(--brand); }
+.panel-overview__value--gold { color: var(--gold-text); }
+.panel-overview__value small { font-size: 11px; font-weight: 300; }
+.panel-overview__label { margin: 2px 0 0; font-size: 11.5px; font-weight: 300; color: var(--text-muted); }
+

@@ -1,0 +1,246 @@
+/* 悬浮球（A 重做）：窗口固定 360×440，三种形态全在同一窗内 ——
+   球（贴角 72×72）/ 面板（inset 12 → 336×416）/ 细条（停靠）。
+   开合只切 body.open：#panel 从球所在角 scale 长出/缩回（CSS 弹性动画），窗口永不改尺寸。
+   orb.css 独立（不依赖 tokens.css）：玻璃色按 v2 视觉基调用 rgba 直写，无 --bg-* 变量可用。 */
+html, body { margin: 0; background: transparent; overflow: hidden; }
+
+/* ===== 球：恒在窗口一角（角位由 data-h/data-v 决定，展开/收起都一样）===== */
+#ball {
+  position: absolute;
+  left: 12px;  /* data-h="right"：面板向右长 → 球贴左缘 */
+  top: 12px;   /* data-v="down"：面板向下长 → 球贴顶缘 */
+  display: block;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+  cursor: grab;
+  background: rgba(10, 54, 42, .06);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  z-index: 2;
+}
+#ball:active { cursor: grabbing; }
+#ball[hidden] { display: none; }
+body[data-h="left"] #ball { left: 276px; }  /* 360 - 12 - 72：面板向左长 → 球贴右缘 */
+body[data-v="up"] #ball { top: 356px; }     /* 440 - 12 - 72：面板向上长 → 球贴底缘 */
+
+/* ===== 面板：填满窗口（内衬 12），从球所在角 scale 展开 =====
+   transform-origin = 球所在角（--origin-x/--origin-y 由 data-h/data-v 注入）：
+   面板长向的反对侧就是球，收起时整块缩进球里。
+   B 重做：面板 = 对话界面（头部 / 提示行 / 消息流 / 输入行，纵向 flex）。 */
+#panel {
+  position: absolute;
+  inset: 12px;
+  box-sizing: border-box;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, .78);
+  background: linear-gradient(158deg, rgba(255, 255, 255, .94), rgba(226, 245, 237, .88));
+  box-shadow: 0 12px 32px rgba(14, 74, 57, .20);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* 弹性开合：默认收成球角小点；body.open 长满 */
+  opacity: 0;
+  transform: scale(.2);
+  transform-origin: var(--origin-x, 100%) var(--origin-y, 100%);
+  pointer-events: none;
+  transition: transform .3s cubic-bezier(.22, 1, .36, 1), opacity .25s ease;
+  will-change: transform, opacity;
+  z-index: 1;
+}
+body[data-h="right"] { --origin-x: 0%; }
+body[data-h="left"] { --origin-x: 100%; }
+body[data-v="down"] { --origin-y: 0%; }
+body[data-v="up"] { --origin-y: 100%; }
+body.open #panel {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+/* ===== 头部：小头像 + 名字 + 新对话 ===== */
+#panel-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid rgba(15, 60, 48, .10);
+}
+#panel-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(14, 74, 57, .20);
+  -webkit-user-drag: none;
+}
+/* 名字可自定义：常驻 input 伪装成普通文本，聚焦才现边框（保存走 config.ui["orb.name"]） */
+#panel-name {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font: 600 13px/1 system-ui, "Microsoft YaHei", sans-serif;
+  color: rgba(15, 60, 48, .9);
+  outline: none;
+}
+#panel-name:hover { border-color: rgba(15, 60, 48, .12); }
+#panel-name:focus { border-color: rgba(54, 181, 141, .55); background: rgba(255, 255, 255, .6); }
+#panel-new {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(15, 60, 48, .55);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+#panel-new:hover { background: rgba(15, 60, 48, .08); color: rgba(15, 60, 48, .85); }
+
+/* ===== 按住说话（9.x）：与 #panel-new 同规格；录制中给品牌绿点态 ===== */
+#panel-mic {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(15, 60, 48, .55);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+#panel-mic:hover { background: rgba(15, 60, 48, .08); color: rgba(15, 60, 48, .85); }
+#panel-mic[data-rec="1"] { background: rgba(54, 181, 141, .18); color: rgba(15, 60, 48, .9); }
+
+/* ===== 工具提示行（B）：悬浮球不建工具卡，工具活动只显示这一行 ===== */
+#panel-hint {
+  flex: none;
+  margin: 6px 12px 0;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(54, 181, 141, .12);
+  color: rgba(15, 60, 48, .72);
+  font: 11px/1.5 system-ui, "Microsoft YaHei", sans-serif;
+}
+#panel-hint[hidden] { display: none; }
+
+/* ===== 消息流 ===== */
+#panel-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#panel-messages::-webkit-scrollbar { width: 6px; }
+#panel-messages::-webkit-scrollbar-thumb { background: rgba(15, 60, 48, .18); border-radius: 3px; }
+#panel-empty {
+  margin: auto;
+  font: 12px/1.6 system-ui, "Microsoft YaHei", sans-serif;
+  color: rgba(15, 60, 48, .45);
+}
+/* 气泡 DOM 与主窗口同构（createBubble 是全项目唯一构造点）；紧凑样式按面板口径另写 */
+#panel-messages .msg {
+  max-width: 88%;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font: 12px/1.6 system-ui, "Microsoft YaHei", sans-serif;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+#panel-messages .msg .role { display: none; }
+#panel-messages .msg.user {
+  align-self: flex-end;
+  background: rgba(54, 181, 141, .18);
+  color: rgba(10, 54, 42, .95);
+  border-bottom-right-radius: 4px;
+}
+#panel-messages .msg.assistant {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, .85);
+  color: rgba(15, 60, 48, .92);
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 4px rgba(14, 74, 57, .10);
+}
+#panel-messages .msg.error {
+  align-self: stretch;
+  background: rgba(220, 80, 80, .12);
+  color: rgba(160, 40, 40, .95);
+}
+
+/* ===== 输入行 ===== */
+#panel-composer {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 8px 10px 10px;
+  border-top: 1px solid rgba(15, 60, 48, .10);
+}
+#panel-input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  resize: none;
+  max-height: 72px;
+  border: 1px solid rgba(15, 60, 48, .14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .8);
+  padding: 6px 9px;
+  font: 12px/1.5 system-ui, "Microsoft YaHei", sans-serif;
+  color: rgba(15, 60, 48, .95);
+  outline: none;
+}
+#panel-input:focus { border-color: rgba(54, 181, 141, .55); }
+#panel-input:disabled { opacity: .55; }
+#panel-send, #panel-stop {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+#panel-send { background: rgba(54, 181, 141, .9); color: #fff; }
+#panel-send:disabled { opacity: .45; cursor: default; }
+#panel-stop { background: rgba(15, 60, 48, .10); color: rgba(15, 60, 48, .75); }
+#panel-stop[hidden] { display: none; }
+
+/* ===== 球遮挡让位：球（72px，z-index 2）压住面板同侧角，头/输入行须向反方向让位 =====
+   球在上（data-v=down）→ 头部让位；球在下（data-v=up）→ 输入行让位；侧向随 data-h。
+   72 = 球径，保证发送/清空按钮完全落在球弧之外。 */
+body[data-h="left"][data-v="down"] #panel-head { padding-right: 72px; }
+body[data-h="right"][data-v="down"] #panel-head { padding-left: 72px; }
+body[data-h="left"][data-v="up"] #panel-composer { padding-right: 72px; }
+body[data-h="right"][data-v="up"] #panel-composer { padding-left: 72px; }
+
+/* ===== 贴边细条（停靠态）：窗口 34×88，细条只画 6×72（上下各 8 光晕）；
+   右侧 28px 是「悬停滑回」的容错命中区，靠主进程整窗收鼠标（不许穿透）===== */
+#tab {
+  position: absolute;
+  top: 8px;
+  width: 6px;
+  height: 72px;
+  background: rgba(54, 181, 141, .9);
+  box-shadow: 0 0 8px rgba(54, 181, 141, .55);
+}
+#tab[hidden] { display: none; }
+body[data-dock="left"] #tab { left: 0; border-radius: 0 3px 3px 0; }
+body[data-dock="right"] #tab { left: 28px; border-radius: 3px 0 0 3px; }
