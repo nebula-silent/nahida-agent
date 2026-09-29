@@ -13,7 +13,7 @@
 - **本地优先的对话**：默认连接本地 Ollama，也可切换到 OpenAI 兼容云端厂商（DeepSeek / GLM / Qwen / Kimi / 豆包 / Gemini / 自定义中转）
 - **角色扮演人设**：三层提示词（身份 / 人格 / 台词锚）每轮动态注入，语气与记忆随对话延续
 - **语音对话**：悬浮球 + 通话窗，sherpa-onnx 本地语音识别，TTS 支持 GPT-SoVITS（本地）/ Edge TTS / OpenAI TTS / MiniMax
-- **记忆系统**：长期记忆存储 + 每日自动整理（睡前 tidy）+ 好感度关系系统
+- **记忆系统**：长期记忆存储 + 每日自动整理（睡前 tidy）
 - **外部消息通道**：微信（iLink）/ 飞书 / 钉钉 —— 全部走**出站长连接**，免公网服务器、免内网穿透
 - **工具与技能**：文件读写、Shell 执行、截图读图、键鼠控制（VLM 定位）、`SKILL.md` 技能系统，全部经权限网关审批与审计
 - **音乐**：网易云播放（Python MCP 后端）
@@ -77,17 +77,17 @@ git clone https://github.com/Code-MonkeyZhang/cloud-music-mcp vendor/cloud-music
 ## 使用
 
 - 主窗口左侧「设置」可配置：模型与厂商、外观（主题 / 强调色 / 背景）、语音引擎、IM 通道、工具权限、记忆整理
-- 数据（配置、会话、记忆、关系、技能）全部保存在 Electron userData 目录（Windows：`%APPDATA%\nahida`），**不随仓库分发**
+- 数据（配置、会话、记忆、技能）全部保存在 Electron userData 目录（Windows：`%APPDATA%\nahida`），**不随仓库分发**
 - API Key 经 `safeStorage`（Windows DPAPI）加密存储，换机器后需重新填写，代码不会报错
 
 ## 目录结构
 
 | 路径 | 内容 |
 | --- | --- |
-| `src/main/` | 主进程：窗口与 IPC、配置存储、对话存储、厂商传输层、语音引擎、IM 通道、记忆 / 好感度 / 技能 / 工具、音乐、媒体 |
+| `src/main/` | 主进程：窗口与 IPC、配置存储、对话存储、厂商传输层、语音引擎、IM 通道、记忆 / 技能 / 工具、音乐、媒体 |
 | `src/preload/` | 预加载：contextBridge 暴露给渲染进程的安全 API |
 | `src/renderer/` | 渲染进程：聊天主界面、设置、工具箱、悬浮球、通话窗、状态层、样式 |
-| `src/shared/` | 三端共用类型与常量：厂商预设 / 能力表 / 协议路由、IPC 通道、共享契约（记忆 / 好感度 / 工具） |
+| `src/shared/` | 三端共用类型与常量：厂商预设 / 能力表 / 协议路由、IPC 通道、共享契约（记忆 / 工具） |
 | `tests/` | Vitest 单测 |
 
 ## 技术栈
