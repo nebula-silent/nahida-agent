@@ -1,0 +1,40 @@
+# nahida-agent 打包配置：安装包开箱即用 —— 语音模型 / ffmpeg / uv / 网易云MCP 全部进 resources/
+# 资源去向与代码的打包态解析一一对应：
+#   models/*        → resources/models/        （voiceBaseDir = process.resourcesPath）
+#   ffmpeg/bin/*    → resources/bin/           （resolveFfmpegPath ③ 级候选）
+#   uv.exe          → resources/bin/uv.exe     （music-mcp-client resolveUvCommand）
+#   cloud-music-mcp → resources/music-mcp/     （resolveMusicPaths isPackaged 分支）
+appId: com.nebula.nahida
+productName: Nahida Agent
+directories:
+  buildResources: build
+  output: release
+files:
+  - dist/**
+  - package.json
+extraResources:
+  - from: models/sherpa-onnx-paraformer-zh-small-2024-03-09
+    to: models/sherpa-onnx-paraformer-zh-small-2024-03-09
+  - from: models/silero_vad.onnx
+    to: models/silero_vad.onnx
+  - from: ffmpeg/bin
+    to: bin
+  - from: build/uv.exe
+    to: bin/uv.exe
+  - from: vendor/cloud-music-mcp
+    to: music-mcp
+    filter:
+      - "src/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "LICENSE"
+      - "README.md"
+asar: true
+win:
+  icon: build/icon.png
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: "${productName}-${version}-setup.${ext}"

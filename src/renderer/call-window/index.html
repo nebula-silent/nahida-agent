@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- 语音通话独立窗（微信式重做）：头像居中 + 外圈声波可视化 + 上方状态 + 下方挂断。
+     头像跟随悬浮球（orb.getState 拉初始 + ORB_AVATAR 广播跟随）；不显示对话文字（用户拍板纯微信式）。
+     窗口本身全透明，卡片圆角/阴影画在页面里；样式走 tokens.css 令牌。 -->
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>语音通话</title>
+    <link rel="stylesheet" href="../ui/tokens.css" />
+    <link rel="stylesheet" href="./call-window.css" />
+  </head>
+  <body>
+    <main id="cw-stage" data-state="IDLE">
+      <section class="cw-card">
+        <!-- 装饰：玻璃卡内的柔光色块（overflow 裁切） -->
+        <div class="cw-blob cw-blob--a" aria-hidden="true"></div>
+        <div class="cw-blob cw-blob--b" aria-hidden="true"></div>
+
+        <p id="cw-status" class="cw-status">正在连接…</p>
+        <p id="cw-duration" class="cw-duration" hidden>00:00</p>
+
+        <div class="cw-visual">
+          <div id="cw-ring" class="cw-ring" aria-hidden="true"></div>
+          <div class="cw-avatar-glow" aria-hidden="true"></div>
+          <img id="cw-avatar" class="cw-avatar" alt="对方头像" draggable="false" />
+        </div>
+
+        <p id="cw-error" class="cw-error" hidden></p>
+
+        <button id="cw-hangup" class="cw-hangup" type="button" title="挂断" aria-label="挂断">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="22" x2="2" y1="2" y2="22"/></svg>
+        </button>
+      </section>
+    </main>
+    <script type="module" src="./call-window.ts"></script>
+  </body>
+</html>

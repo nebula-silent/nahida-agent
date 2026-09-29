@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>悬浮球</title>
+    <style>
+      /* 球窗专用：整页透明、无滚动条；球以外的区域由主进程 setIgnoreMouseEvents 放行给底下窗口 */
+      html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+    </style>
+    <link rel="stylesheet" href="./orb.css" />
+  </head>
+  <body>
+    <!-- A 重做：面板常驻 DOM，开合由 body.open 的 CSS scale 控制（不能用 hidden，会杀掉过渡动画）。
+         B 重做：面板填成对话（消息流 + 输入框），消息链路复用主窗口同款 chat / chats 桥 -->
+    <div id="panel">
+      <header id="panel-head">
+        <img id="panel-avatar" alt="" />
+        <input id="panel-name" value="纳西妲" title="点击修改名字" spellcheck="false" autocomplete="off" aria-label="助手名字" />
+        <!-- 9.x：按住说话（独立于主界面右下角那颗）—— 松开转写后文字进本面板输入框 -->
+        <button id="panel-mic" type="button" title="按住说话，松开转成文字">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+        </button>
+        <button id="panel-new" type="button" title="清空对话（清除上下文）">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>
+        </button>
+      </header>
+      <!-- 工具活动提示（B）：悬浮球不建工具卡，只显示这一行；卡片在主窗口 -->
+      <div id="panel-hint" hidden></div>
+      <div id="panel-messages">
+        <div id="panel-empty">和纳西妲说点什么吧</div>
+      </div>
+      <form id="panel-composer">
+        <textarea id="panel-input" rows="1" placeholder="发消息…"></textarea>
+        <button id="panel-stop" type="button" title="停止" hidden>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        </button>
+        <button id="panel-send" type="submit" title="发送">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg>
+        </button>
+      </form>
+    </div>
+    <img id="ball" alt="悬浮球" />
+    <div id="tab" hidden></div>
+    <script type="module" src="./orb.ts"></script>
+  </body>
+</html>

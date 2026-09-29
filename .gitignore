@@ -1,0 +1,66 @@
+# 参考自 Cyrene-Agent .gitignore（已精简：去掉业务模块产物、模型、docs 相关规则）
+node_modules/
+
+# 9.29 开源准备：本地备份快照（含历史版本与可能的敏感中间态，绝不进仓库）
+.backup/
+
+# 9.29 开源准备：调试备份文件（*.bak-* 是改动前的备份，git 会跟踪，须忽略）
+*.bak
+*.bak-*
+
+# 9.29 开源准备：验收截图（8MB 内部验收产物）+ 关于页素材（孤悬根目录、未被构建引用）
+.acceptance/
+nahida-agent-about/
+
+# 9.29 开源准备：开发工单/内部文档（给 AI 的工作指令，不属于开源内容）
+work-orders/
+
+# Build outputs (Electron + Vite + tsc) —— 整目录不进仓库（含多窗口的子目录 index.html）
+dist/
+*.js.map
+*.tsbuildinfo
+
+# 9.30 打包中间产物：build/ 是 electron-builder buildResources（icon 生成图 + 73MB uv.exe 拷贝源），release/ 是安装包输出 —— 都不进仓库
+build/
+release/
+
+# 第三方上游仓库（cloud-music-mcp，约 103MB Python 项目，带自有 LICENSE；开源时 README 写克隆指引）
+vendor/
+
+# 便携 FFmpeg（2.7b 直播/录屏依赖，约 160MB 二进制不进仓库；换电脑时手动拷 C:\ffmpeg\bin）
+ffmpeg/
+
+# 内置模型（4.7 语音识别：sherpa paraformer + silero-vad，约 80MB 不进仓库；随项目文件夹整体搬）
+models/
+
+# Test & coverage
+coverage/
+
+# Local debug/verification artifacts
+verify-*.js
+verify-*.png
+verify-*.html
+test-output/
+tmp/
+tmp_*.txt
+# 指令里要求的临时验证脚本 / 回归截图（如 .tmp-35-*.cjs），跑完即弃，不进仓库
+.tmp*
+# 双下划线前缀的同类临时脚本（__tmp-e2e.cjs / __tmp-fake-servers.cjs 等），同样跑完即弃
+__tmp*
+nul
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Sensitive keys and credentials
+*.key
+*.pem
+*.log
+
+# Local env files (keep .env.example tracked)
+.env
+.env.*
+!.env.example

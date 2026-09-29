@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>选择截图区域</title>
+    <style>
+      /* 遮罩窗专用：整页透明，底图铺满，拖框用绝对定位 */
+      html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; cursor: crosshair; }
+      #shot { position: fixed; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+      #dim { position: fixed; inset: 0; background: rgba(10, 54, 42, .45); }
+      #rect { position: fixed; display: none; border: 1px solid #f2dda4; box-shadow: 0 0 0 9999px rgba(10, 54, 42, .45); }
+      #size {
+        position: fixed; display: none; padding: 2px 8px; border-radius: 999px;
+        background: rgba(10, 54, 42, .88); color: #f2dda4; font: 12px/1.6 system-ui, sans-serif;
+      }
+      #tip {
+        position: fixed; left: 50%; top: 18px; transform: translateX(-50%);
+        padding: 6px 14px; border-radius: 999px; background: rgba(10, 54, 42, .88);
+        color: #eafaf2; font: 12px/1.6 system-ui, sans-serif; pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <img id="shot" alt="" />
+    <div id="dim"></div>
+    <div id="rect"></div>
+    <div id="size"></div>
+    <div id="tip">拖动选择区域 · Esc 取消</div>
+    <script type="module" src="./overlay.ts"></script>
+  </body>
+</html>

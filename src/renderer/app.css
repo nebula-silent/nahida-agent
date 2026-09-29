@@ -1,0 +1,502 @@
+/* nahida 应用外壳 v2 · 背景装饰层 + 三栏玻璃布局
+   来源：《UI设计规范-森林智慧女神.md》§3 布局骨架 / §4 背景装饰层 / §2.7 动效，
+   视觉照搬 原型 home.html（原型 class 已翻译为原生 CSS）。
+   替换阶段一深色外壳（旧版备份：.backup/renderer-v1-dark-20260926/app.css） */
+
+/* ===== 最外层壳（§3：外边距 16px，列间距 16px） ===== */
+#app {
+  position: relative;
+  height: 100vh;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+}
+
+/* ===== 背景装饰层（§4 灵魂层；底色径向渐变由 body 提供） ===== */
+#bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 符文环：外环金、内环绿的双同心圆 */
+.rune-mark {
+  position: absolute;
+  border-radius: var(--r-pill);
+  background:
+    radial-gradient(closest-side, rgba(255,255,255,0) 76%, rgba(216,180,95,.85) 78%, rgba(216,180,95,.85) 81%, rgba(255,255,255,0) 83%),
+    radial-gradient(closest-side, rgba(255,255,255,0) 60%, rgba(18,141,107,.6) 62%, rgba(18,141,107,.6) 64.5%, rgba(255,255,255,0) 66.5%);
+}
+
+/* 世界树剪影：底部居中（主干金描边 + 树冠 5 团，path 见 index.html 内联 SVG） */
+.world-tree {
+  position: absolute;
+  bottom: -64px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: .15;
+}
+
+/* 净善宫剪影：右下角 */
+.palace {
+  position: absolute;
+  bottom: 0;
+  right: 4%;
+  opacity: .16;
+}
+
+/* 金色光点：径向渐变金，drift 漂浮（8 个，delay 在 index.html 行内错开） */
+.orb {
+  position: absolute;
+  border-radius: var(--r-pill);
+  background: radial-gradient(circle, rgba(255,240,190,.95), rgba(233,196,106,.35) 58%, rgba(233,196,106,0) 72%);
+  animation: drift 8s ease-in-out infinite;
+}
+
+/* ===== 三栏布局：侧边栏 248 / 主列 flex:1（内部分 topbar + main-row） ===== */
+#sidebar {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 248px;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-shell);
+  overflow: hidden;
+}
+
+/* #container 主列：普通 flex 容器，自身无玻璃（玻璃在 topbar / view-area / panel 各身上） */
+#container {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 主列内部第二行：左侧聊天/工具玻璃 + 右侧状态玻璃，同级并列 */
+.main-row {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+/* 右侧状态栏（与 .view-area 同级在 .main-row 里）
+   2.8：不再是玻璃容器（原型 aside 无玻璃），改为透明滚动列，内部每张卡各自 .glass */
+#panel {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 320px;
+  min-width: 0;
+  min-height: 0;          /* 让内部 overflow-y 生效 */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;              /* 原型 gap-4（清单写的 12px 作废） */
+  overflow-y: auto;
+  padding-right: 2px;     /* 原型 pr-0.5，避免卡片贴住滚动条 */
+}
+
+/* 5.4：设置 / 关于两个视图不显示右栏。隐藏后 .view-area（flex:1 1 auto）自动吃掉 320px，无需 data 属性
+   必须显式声明：上面 #panel 的 display:flex（特异性 1,0,0）会压过 UA 的 [hidden]（0,1,0）
+   手法同 .dd__list[hidden]（:491-493） */
+#panel[hidden] { display: none; }
+
+/* ===== 顶部栏（规范 §5.3-5.5）：整条 drag 自绘标题栏，交互元素逐个 no-drag ===== */
+#topbar {
+  flex: 0 0 auto;
+  height: 62px;
+  border-radius: var(--r-card);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  -webkit-app-region: drag; /* 玻璃材质由 HTML 上的 .glass 提供 */
+}
+#topbar .no-drag { -webkit-app-region: no-drag; }
+
+/* 左：头像 + 两行状态 */
+.topbar__who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.topbar__avatar { position: relative; flex: 0 0 44px; width: 44px; height: 44px; }
+.topbar__avatar-core {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255,255,255,.8);
+  background: radial-gradient(circle at 32% 28%, #f6fffb, #c3efdc 60%, #8fd9bd);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 头像：立绘铺满圆形容器（2026-09-26 换 assets/avatar.png，与侧边栏同图） */
+.topbar__avatar-core img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-pill);
+  object-fit: cover;
+}
+.topbar__dot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--r-pill);
+  border: 2px solid #fff;
+  background: #10b981;
+  animation: pulse 2s ease-in-out infinite;
+}
+/* 在线点跟随 model.status（3.9）：与侧边栏品牌卡同一套规则，否则会出现「侧边栏说离线、顶部栏还绿跳」 */
+.topbar__dot[data-state="error"],
+.topbar__dot[data-state="unknown"] { background: rgba(14,59,46,.35); animation: none; }
+.topbar__dot[data-state="connecting"] { background: var(--gold); }
+.topbar__meta { min-width: 0; }
+#topbar .topbar__title { font-weight: 600; font-size: 15px; color: var(--text-strong); line-height: 1.3; }
+#topbar .topbar__sub { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+#topbar .topbar__spacer { flex: 1; }
+
+/* 右侧工具组 */
+.topbar__tools { display: flex; align-items: center; gap: 8px; }
+/* 图标按钮（规范 §5.4：34×34 / r-btn / hover 白底金字） */
+.icon-btn {
+  display: flex;
+  height: 34px;
+  width: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-btn);
+  border: 1px solid rgba(255,255,255,.8);
+  background: rgba(255,255,255,.6);
+  color: #14503f;
+  transition: all var(--t-fast);
+}
+.icon-btn:hover {
+  background: #fff;
+  border-color: rgba(216,180,95,.6);
+  color: #8a6d24;
+}
+/* 7.4：工作模式激活态（与 .menu-item.active 同一套激活视觉，浅色玻璃不变） */
+.icon-btn.active {
+  background: linear-gradient(100deg, rgba(169,231,205,.9), rgba(242,221,164,.55));
+  border-color: rgba(216,180,95,.75);
+  box-shadow: 0 14px 26px -18px rgba(18,141,107,.85);
+}
+
+/* 视图区：自身就是玻璃面板（position:relative 作为 .view absolute 锚点） */
+.view-area {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: var(--r-shell);
+  overflow: hidden;
+}
+
+/* ===== 视图切换（保留阶段一机制：单页 div 切换） ===== */
+.view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transition: opacity var(--t-fast);
+}
+.view--hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ===== 视图头（清单 §1.2 统一结构；2.6 聊天视图首用，后续视图复用） ===== */
+.view-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px 0; /* 原型 px-6 py-4（曾误写 20px，2026-09-27 对齐；6 视图共用，改前先核对全部视图头） */
+  margin-bottom: 16px; /* 清单 §1.2：头部与下方内容间距 16px */
+}
+.view-head__icon {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.7);
+  background: linear-gradient(135deg, #e9fbf2, #b9ecd8);
+  color: var(--brand);
+}
+.view-head__meta { flex: 1 1 auto; min-width: 0; }
+.view-head__title { margin: 0; font-size: 16px; font-weight: 600; color: var(--text-strong); line-height: 1.4; }
+.view-head__sub { margin: 2px 0 0; font-size: 12px; color: var(--text-muted); }
+.view-head__tools {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 32px 圆形图标按钮（规范 §1.6；视图头搜索/字号/更多、输入区附件/语气/加速共用） */
+.icon-btn--round {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-pill);
+}
+
+/* ===== 通用控件（清单 §1.6；素材出自 原型 studio.html 的 .tab-btn / .btn-soft） ===== */
+
+/* 标签页 / chip：胶囊；选中 = 深绿渐变 + 白字 */
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: rgba(255, 255, 255, .6);
+  font-family: inherit;
+  font-size: 12.5px;
+  color: #14503f;
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.tab-btn:hover { border-color: rgba(216, 180, 95, .6); } /* hover 是金色描边，不是绿色 */
+.tab-btn.active {
+  background: linear-gradient(120deg, #128d6b, #3fbf95);
+  border-color: rgba(255, 255, 255, .85);
+  color: #fff;
+  box-shadow: 0 12px 24px -16px rgba(18, 141, 107, .95);
+}
+
+/* 次按钮：白底 + 绿描边 + 绿字，胶囊 34px（「打开」「恢复默认」共用） */
+.btn-soft {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(18, 141, 107, .35);
+  background: rgba(255, 255, 255, .7);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0d7a5b;
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.btn-soft:hover { background: #fff; border-color: rgba(18, 141, 107, .6); }
+
+/* ===== 常驻动画（§2.7：仅光点漂浮 / 打字点 / 在线脉冲 三个） ===== */
+@keyframes drift {
+  0%,100% { transform: translateY(0) scale(1);      opacity: .35 }
+  50%     { transform: translateY(-22px) scale(1.12); opacity: .95 }
+}
+@keyframes bounce {
+  0%,100% { transform: translateY(0);    opacity: .45 }
+  50%     { transform: translateY(-4px); opacity: 1   }
+}
+@keyframes pulse {
+  0%,100% { transform: scale(1);    opacity: .85 }
+  50%     { transform: scale(1.25); opacity: 1   }
+}
+
+/* ===== 通用控件补全（2.9；素材出自 原型 tasks.html / memory.html / settings.html）
+   一次性落位，2.10 / 2.11 直接复用，不要在视图文件里再定义一份 ===== */
+
+/* 开关 .switch：42×22 胶囊，白点 16px；选中 = 绿渐变底 + 白点右移 20px */
+.switch {
+  position: relative;
+  flex: none;
+  height: 22px;
+  width: 42px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: rgba(255, 255, 255, .7);
+  transition: background var(--t-fast);
+}
+.switch > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  height: 16px;
+  width: 16px;
+  border-radius: var(--r-pill);
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(14, 59, 46, .35);
+  transition: transform var(--t-fast);
+}
+.switch[data-on="true"] { background: linear-gradient(120deg, var(--brand), var(--brand-bright)); }
+.switch[data-on="true"] > span { transform: translateX(20px); }
+
+/* 小标签 .tag：三色（绿 / 金 / 墨金） */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 300;            /* 11px 小字统一 300（2.8b 规则） */
+  white-space: nowrap;
+}
+.tag-green { background: rgba(233, 251, 242, .9); color: #0d7a5b; border: 1px solid rgba(18, 141, 107, .18); }
+.tag-gold  { background: #fdf3dd;                 color: #96772b; border: 1px solid rgba(216, 180, 95, .3); }
+.tag-ink   { background: rgba(10, 54, 42, .9);    color: #f2dda4; border: 1px solid rgba(226, 206, 140, .45); }
+
+/* 金色主按钮 .btn-gold：胶囊 36px，金渐变底 + 深金字，hover 提亮 */
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(224, 201, 136, .9);
+  background: linear-gradient(120deg, #f7e6b5, var(--gold));
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--gold-text-deep);
+  cursor: pointer;
+  transition: filter var(--t-fast);
+}
+.btn-gold:hover { filter: brightness(1.05); }
+
+/* 搜索框 .search-box：胶囊 34px + 白玻璃底（设置/记忆共用） */
+.search-box {
+  height: 34px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, .85);
+  background: rgba(255, 255, 255, .7);
+  padding: 0 14px;
+  font-size: 12.5px;
+  color: var(--text-strong);
+}
+.search-box::placeholder { color: var(--text-ghost); }
+.search-box:focus { border-color: rgba(18, 141, 107, .55); }
+
+/* 分段按钮 .seg：圆角 14px（注意不是胶囊）；选中 = 绿渐变 + 白字 */
+.seg {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: rgba(255, 255, 255, .55);
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  color: #14503f;
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.seg:hover { border-color: rgba(216, 180, 95, .6); }
+.seg[data-on="true"] {
+  background: linear-gradient(120deg, var(--brand), var(--brand-bright));
+  border-color: rgba(255, 255, 255, .85);
+  color: #fff;
+}
+
+/* 表单控件（设置视图用）：原生 range / text / password / select，圆角 14px
+   注意：这些是全局选择器（照原型）；目前全项目只有设置视图用到 input / select
+   （password 由 3.7 模型卡的 API Key 输入框引入） */
+input[type="range"] { width: 100%; accent-color: var(--brand); }
+input[type="text"],
+input[type="password"],
+input[type="number"], /* 4.6：语音卡的语速 / 超时 */
+select {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .85);
+  /* 原生 select 在 Windows 上是系统蓝底方框，用户验收要求美化：
+     去掉 appearance 自绘箭头（背景简写里带 SVG），展开菜单用 option 配色改成品牌绿 */
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, .7) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23128d6b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat right 10px center;
+  padding: 8px 28px 8px 12px;
+  font-size: 12.5px;
+  color: var(--text-strong);
+}
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus, /* 4.6 */
+select:focus { border-color: rgba(18, 141, 107, .55); }
+select { cursor: pointer; }
+/* 展开后的下拉菜单：Chromium/Windows 吃 option 的纯色背景，系统蓝 → 品牌绿 */
+select option { background-color: #f4faf7; color: #14352a; }
+select option:checked { background-color: #0e3b2e; color: #f2dda4; }
+select option:hover,
+select option:focus { background-color: #128d6b; color: #fff; }
+
+/* ===== 自绘下拉（2.7b 截图面板，见 studio/dropdown.ts）：
+   原生展开菜单的 hover 高亮是系统蓝、CSS 不可覆盖，换自绘浮层。
+   样式照抄聊天模型选择器（chat.css .model-menu）：用户验收指定要同款 ===== */
+.dd { position: relative; display: inline-block; }
+.dd__btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .85);
+  background: rgba(255, 255, 255, .7);
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--text-strong);
+  cursor: pointer;
+}
+.dd__btn:focus-visible { border-color: rgba(18, 141, 107, .55); outline: none; }
+.dd__btn:disabled { opacity: .55; cursor: not-allowed; }
+.dd__arrow {
+  margin-left: auto;
+  width: 10px;
+  height: 6px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23128d6b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat center / contain;
+  transition: transform .18s ease;
+}
+.dd--open .dd__arrow { transform: rotate(180deg); }
+.dd__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 100%;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: linear-gradient(160deg, rgba(255, 255, 255, .95), rgba(240, 251, 245, .92));
+  box-shadow: 0 14px 38px rgba(15, 92, 69, .18);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 40;
+  max-height: 240px;
+  overflow-y: auto;
+}
+/* 必须显式声明：上面 .dd__list 的 display:flex 特异性会压过 [hidden] 的 UA display:none，
+   不补这条浮层就会常驻展开（用户实测 bug） */
+.dd__list[hidden] { display: none; }
+.dd__opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  text-align: left;
+  padding: 7px 10px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: #14503f;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s ease, color .15s ease;
+}
+.dd__opt:hover { background: rgba(18, 141, 107, .1); }
+.dd__opt--on {
+  background: linear-gradient(120deg, #128d6b, #3fbf95);
+  color: #fff;
+}
+.dd__opt--on:hover { background: linear-gradient(120deg, #128d6b, #3fbf95); }
+.dd__label { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dd__check { flex: 0 0 auto; display: flex; }

@@ -1,0 +1,571 @@
+/* nahida 设计令牌 v2 · 玻璃拟态
+   来源：《UI设计规范-森林智慧女神.md》v2 §2.1 完整变量表（风格基准 原型 home.html）
+   阶段一深色令牌（--nx-* 前缀）已整体废弃，全局不留残留。
+   主题光照自设置「外观」卡驱动：浅色 = :root 默认；深色 = [data-theme="dark"] 覆盖。
+   强调色（高亮/按钮/选中）自设置写 documentElement —brand 系列内联覆盖（applyVisual）。 */
+
+:root{
+  /* ---------- 背景（整页底） ---------- */
+  --bg-page: radial-gradient(circle at 18% 8%, #ffffff 0%, #eefaf4 30%, #d8f1e5 60%, #c1e8d8 100%);
+  --bg-solid: #eefaf4; /* 背景样式=纯色/自定义图片时的浅色基准；深色由 [data-theme="dark"] 覆盖 */
+  /* 8.7.22：背景样式=自定义图片时的可读性遮罩 —— --bg-image 复合值里的首层，叠在图与渐变底之间；
+     浅色半透明白绿、深色半透明深绿，保证文字不糊（图铺满但不抢内容） */
+  --bg-image-mask: rgba(238, 250, 244, .55);
+
+  /* ---------- 玻璃材质：常规卡片 ---------- */
+  --glass-bg:     linear-gradient(150deg, rgba(255,255,255,.80), rgba(240,252,246,.58));
+  /* 5.1.1：磨砂强度可调 —— blur 半径由 --frost-blur 驱动（设置页写入 documentElement 覆盖）。
+     ⚠️ 默认必须仍是 18px（:root 定义 + var() 兜底双保险），改错 = 全局玻璃视觉回归 */
+  --glass-blur:   blur(var(--frost-blur, 18px)) saturate(150%);
+  --glass-border: 1px solid rgba(255,255,255,.78);
+  --glass-shadow: 0 20px 44px -28px rgba(14,59,46,.5), inset 0 1px 0 rgba(255,255,255,.75);
+
+  /* ---------- 5.1.1 视觉项数值令牌（非色值；:root 为默认值） ---------- */
+  --frost-blur:     18px;  /* 玻璃模糊半径基准：--glass-blur 的 var 兜底（原「磨砂强度」滑块已废弃） */
+
+  /* ---------- 玻璃材质：深色卡（版本号 / 强调块） ---------- */
+  --glass-deep-bg:     linear-gradient(160deg, rgba(10,54,42,.86), rgba(17,78,60,.74));
+  --glass-deep-blur:   blur(16px);
+  --glass-deep-border: 1px solid rgba(226,206,140,.4);
+  --glass-deep-text:   #eafaf2;
+
+  /* ---------- 品牌绿 ---------- */
+  --brand:        #128d6b;   /* 主色 */
+  --brand-bright: #3fbf95;   /* 亮部 / 渐变末端 */
+  --brand-mid:    #7ed0b0;   /* 中间调 */
+  --brand-soft:   #a9e7cd;   /* 浅绿 / 光晕 */
+  --brand-ink:    #0f5c45;   /* 背景剪影描边 */
+
+  /* ---------- 金 ---------- */
+  --gold:           #d8b45f;
+  --gold-soft:      #f2dda4;
+  --gold-pale:      #fdf6e3;   /* 极浅金底 */
+  --gold-line:      #e0c988;   /* 金色描边 */
+  --gold-text:      #8a6d24;   /* 金底上的文字 */
+  --gold-text-deep: #5c4713;   /* 金色按钮上的文字 */
+
+  /* ---------- 文字 ---------- */
+  --text-strong: #0e3b2e;            /* 标题 / 主文字 */
+  --text-body:   rgba(14,59,46,.7);  /* 正文 */
+  --text-muted:  rgba(14,59,46,.6);  /* 描述 */
+  --text-faint:  rgba(14,59,46,.5);  /* 辅助 / 时间戳 */
+  --text-ghost:  rgba(14,59,46,.4);  /* 占位符 */
+
+  /* ---------- 圆角 ---------- */
+  --r-shell:  28px;   /* 侧边栏 / 主区大玻璃板 */
+  --r-card:   24px;   /* 标准卡片 */
+  --r-inner:  22px;   /* 卡片内嵌小块 */
+  --r-menu:   16px;   /* 导航项 */
+  --r-btn:    12px;   /* 图标按钮 */
+  --r-bubble: 26px;   /* 聊天气泡 */
+  --r-pill:   999px;  /* 胶囊 / 标签 / 主按钮 */
+
+  /* ---------- 间距（基准 4px） ---------- */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px;
+  --sp-4: 16px; --sp-5: 20px; --sp-6: 24px;
+
+  /* ---------- 动效 ---------- */
+  --t-fast: .2s ease;
+}
+
+/* ============================================================
+   外观设置深色覆盖（设置页 → documentElement.dataset.theme = "dark"）
+   规则：只重排本文件已有的变量，不新增 hex；背景转深绿、文字转浅色、
+   玻璃转深、强调光晕压暗。浅色 = :root 默认，不写覆盖块。
+   （8.7.21 死代码清理：旧「晨光/正午/黄昏/林间雨」主题覆盖块与
+   [data-anim] 动效覆盖块随外观重设计删除 —— 设置只写 light|dark。）
+   ============================================================ */
+
+[data-theme="dark"]{
+  --bg-page: radial-gradient(circle at 18% 8%, #0e3b2e 0%, #0a2b22 45%, #071f19 100%);
+  --bg-solid: #0e3b2e; /* 背景样式=纯色/自定义图片时，深色下也跟随深绿 */
+  --bg-image-mask: rgba(7, 31, 25, .72); /* 8.7.22：自定义图片背景在深色下的遮罩更深，文字可读 */
+
+  /* 玻璃：白 → 深绿半透明，描边转淡绿，阴影转黑 */
+  --glass-bg:     linear-gradient(150deg, rgba(14,59,46,.66), rgba(10,43,34,.52));
+  --glass-border: 1px solid rgba(169,231,205,.14);
+  --glass-shadow: 0 20px 44px -28px rgba(0,0,0,.7), inset 0 1px 0 rgba(169,231,205,.08);
+
+  /* 文字层级整体提亮 */
+  --text-strong: #eafaf2;
+  --text-body:   rgba(234,250,242,.85);
+  --text-muted:  rgba(234,250,242,.72);
+  --text-faint:  rgba(234,250,242,.6);
+  --text-ghost:  rgba(234,250,242,.45);
+
+  /* 品牌绿光晕压暗（--brand 系列由强调色覆盖驱动，这里兜底不让它发白） */
+  --brand-soft: #2c7a5f;
+  --brand-mid:  #1e634c;
+
+  /* 金色：文字/图标系必须留浅（消费方全在深底卡上：侧栏底部卡 / 直播徽标 / 任务金条）；
+     --gold-pale / --gold-line 是背景系，压暗避免深底刺眼 */
+  --gold-soft:  #e8d9a4;
+  --gold-pale:  #3a3326;
+  --gold-line:  #8a7a4f;
+  --gold-text:  #c9b57a;
+
+  /* 原生控件（数字步进箭头 / 滚动条 / 下拉菜单）切深色系统皮肤 */
+  color-scheme: dark;
+
+  /* 深色卡描边：原淡金 40% 在深底上显白，压成暗金 30% */
+  --glass-deep-border: 1px solid rgba(216, 180, 95, .3);
+}
+
+/* ============================================================
+   深色模式组件适配（2026-09-29 用户验收反馈：深色下白玻璃突兀 / 深字看不见）
+   原因：settings.css / studio.css / app.css 里通用控件用的是硬编码
+   白玻璃 rgba(255,255,255,…) + 深色字 rgba(14,59,46,…)/#14503f，
+   只反转变量不反转它们。这里集中覆盖，浅色模式完全不动。
+   统一语言：白玻璃 → 深绿玻璃（rgba(14,59,46,·) + 淡绿描边）；深字 → 浅字。
+   注意：本段跟在 [data-theme="dark"] 变量块后，选择器都是 [data-theme="dark"] 前缀，
+   不会误伤浅色模式。
+   ============================================================ */
+
+/* ---- 通用控件（app.css）：seg / tab / 次按钮 / 开关 / 输入框 / 自绘下拉 ---- */
+[data-theme="dark"] .seg,
+[data-theme="dark"] .tab-btn,
+[data-theme="dark"] .btn-soft,
+[data-theme="dark"] .switch,
+[data-theme="dark"] .dd__btn {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .2);
+  color: rgba(234, 250, 242, .88);
+}
+[data-theme="dark"] .seg:hover,
+[data-theme="dark"] .tab-btn:hover,
+[data-theme="dark"] .btn-soft:hover { border-color: rgba(216, 180, 95, .6); }
+[data-theme="dark"] .btn-soft:hover { background: rgba(30, 99, 76, .75); }
+[data-theme="dark"] .seg[data-on="true"],
+[data-theme="dark"] .tab-btn.active,
+[data-theme="dark"] .switch[data-on="true"] {
+  background: linear-gradient(120deg, var(--brand), var(--brand-bright));
+  color: #fff;
+}
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] select,
+[data-theme="dark"] .media-select {
+  background-color: rgba(14, 59, 46, .55);
+  border-color: rgba(169, 231, 205, .4);
+  color: var(--text-strong);
+}
+/* 输入控件聚焦：原品牌绿在深底上太暗，换亮部绿 + 外发光（用户验收：聚焦看不清） */
+[data-theme="dark"] input[type="text"]:focus,
+[data-theme="dark"] input[type="password"]:focus,
+[data-theme="dark"] input[type="number"]:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] .media-select:focus {
+  border-color: rgba(63, 191, 149, .8);
+  box-shadow: 0 0 0 3px rgba(63, 191, 149, .15);
+}
+/* 占位符：UA 默认灰在深底上隐形，显式提亮（用户验收：留空提示看不见） */
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: rgba(234, 250, 242, .38); }
+/* 下拉箭头：原生 select 与 .dd 的绿描边在深底上太暗，换淡绿 */
+[data-theme="dark"] select,
+[data-theme="dark"] .dd__arrow {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23a9e7cd' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+}
+/* select 展开菜单：深色底 + 浅字（原生 option 配色） */
+[data-theme="dark"] select option { background-color: #0e3b2e; color: #eafaf2; }
+[data-theme="dark"] select option:checked { background-color: #1e634c; color: #f2dda4; }
+[data-theme="dark"] select option:hover,
+[data-theme="dark"] select option:focus { background-color: #128d6b; color: #fff; }
+
+/* ---- 设置页（settings.css）---- */
+[data-theme="dark"] .settings__body,
+[data-theme="dark"] .settings-nav,
+[data-theme="dark"] .studio__tabs,
+[data-theme="dark"] .tools-subtabs { border-top-color: rgba(169, 231, 205, .14); }
+
+[data-theme="dark"] .settings-card,
+[data-theme="dark"] .voice-engine,
+[data-theme="dark"] .lt-row {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .18);
+}
+[data-theme="dark"] .settings-card__title,
+[data-theme="dark"] .settings-item__label,
+[data-theme="dark"] .settings-item__stack,
+[data-theme="dark"] .settings-switch,
+[data-theme="dark"] .voice-group,
+[data-theme="dark"] .voice-engine__name,
+[data-theme="dark"] .media-card__title,
+[data-theme="dark"] .media-bar__label,
+[data-theme="dark"] .media-subhead,
+[data-theme="dark"] .media-switches,
+[data-theme="dark"] .media-field,
+[data-theme="dark"] .settings-nav__item {
+  color: rgba(234, 250, 242, .85);
+}
+[data-theme="dark"] .settings-nav__item:hover { background: rgba(30, 99, 76, .4); }
+[data-theme="dark"] .settings-nav__item--active,
+[data-theme="dark"] .settings-nav__item--active:hover {
+  background: rgba(30, 99, 76, .6);
+  color: var(--brand-bright);
+}
+
+/* 设置页内的小块（说明 / 行 / 结果 / 状态） */
+[data-theme="dark"] .settings-note,
+[data-theme="dark"] .about-credit,
+[data-theme="dark"] .about-env,
+[data-theme="dark"] .about-notice p,
+[data-theme="dark"] .about-license__row,
+[data-theme="dark"] .about-contact__row,
+[data-theme="dark"] .dot-list li,
+[data-theme="dark"] .model-card__result,
+[data-theme="dark"] .mcp-result,
+[data-theme="dark"] .mcp-row,
+[data-theme="dark"] .im-result,
+[data-theme="dark"] .im-card,
+[data-theme="dark"] .im-qr,
+[data-theme="dark"] .im-inject-result,
+[data-theme="dark"] .skills-row,
+[data-theme="dark"] .lt-result,
+[data-theme="dark"] .persona-result,
+[data-theme="dark"] .up-result,
+[data-theme="dark"] .weather-result,
+[data-theme="dark"] .perm-result,
+[data-theme="dark"] .audit-result,
+[data-theme="dark"] .dir-row,
+[data-theme="dark"] .music-qr,
+[data-theme="dark"] .music-track {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .18);
+  color: rgba(234, 250, 242, .8);
+}
+[data-theme="dark"] .settings-note { color: rgba(234, 250, 242, .75); }
+[data-theme="dark"] .about-credit__name,
+[data-theme="dark"] .about-license__name,
+[data-theme="dark"] .about-contact__label,
+[data-theme="dark"] .about-env__label,
+[data-theme="dark"] .mcp-row__name,
+[data-theme="dark"] .im-row__name,
+[data-theme="dark"] .im-card__name,
+[data-theme="dark"] .skills-row__name,
+[data-theme="dark"] .voice-engine__name,
+[data-theme="dark"] .music-status__meta strong,
+[data-theme="dark"] .music-qr__meta strong,
+[data-theme="dark"] .music-track__meta strong { color: #eafaf2; }
+
+/* ---- 工作台（studio.css）---- */
+[data-theme="dark"] .tool-card {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .18);
+}
+[data-theme="dark"] .tool-card:hover {
+  border-color: rgba(216, 180, 95, .5);
+  box-shadow: 0 22px 34px -26px rgba(0, 0, 0, .8);
+}
+[data-theme="dark"] .tool-card__desc,
+[data-theme="dark"] .media-field,
+[data-theme="dark"] .media-switches,
+[data-theme="dark"] .shot-card__cap { color: rgba(234, 250, 242, .75); }
+[data-theme="dark"] .tool-card__icon,
+[data-theme="dark"] .studio__placeholder-icon {
+  background: linear-gradient(135deg, rgba(30, 99, 76, .8), rgba(18, 141, 107, .5));
+  color: #d9f5e8;
+  border-color: rgba(169, 231, 205, .25);
+}
+[data-theme="dark"] .tools-subtab {
+  background: rgba(14, 59, 46, .45);
+  border-color: rgba(169, 231, 205, .2);
+  color: rgba(234, 250, 242, .85);
+}
+[data-theme="dark"] .tools-subtab.active {
+  background: linear-gradient(120deg, var(--brand), var(--brand-bright));
+  color: #fff;
+}
+[data-theme="dark"] .record-row,
+[data-theme="dark"] .record-wave { background: rgba(14, 59, 46, .5); }
+[data-theme="dark"] .shot-card {
+  border-color: rgba(169, 231, 205, .18);
+  background: linear-gradient(135deg, rgba(30, 99, 76, .7), rgba(18, 141, 107, .4));
+}
+[data-theme="dark"] .record-preview,
+[data-theme="dark"] .live-preview { border-color: rgba(169, 231, 205, .18); }
+[data-theme="dark"] .about-status {
+  border-color: rgba(216, 180, 95, .35);
+  background: rgba(74, 64, 48, .55);
+  color: var(--gold-text);
+}
+
+/* ============================================================
+   深色模式组件适配 · 第二段（2026-09-29 同轮验收补齐）
+   第一段只覆盖了设置 / 工作台主卡；侧边栏、右栏、聊天、记忆、任务、
+   以及设置页内的语音 / 消息通道 / 关于 / 长期记忆 / 审计等子组件仍是
+   硬编码白玻璃 + 深字，深色下同样突兀。本段按同一语言补齐：
+   白玻璃 → 深绿玻璃（rgba(14,59,46,·) + 淡绿描边）；深字 → 浅字。
+   浅色模式完全不动（选择器均带 [data-theme="dark"] 前缀）。
+   ============================================================ */
+
+/* ---- 侧边栏（sidebar.css）---- */
+[data-theme="dark"] .brand,
+[data-theme="dark"] .brand__status {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .18);
+}
+[data-theme="dark"] .menu-item:hover {
+  background: rgba(30, 99, 76, .45);
+  border-color: rgba(216, 180, 95, .5);
+}
+[data-theme="dark"] .menu-item.active {
+  background: linear-gradient(100deg, rgba(30, 99, 76, .75), rgba(74, 64, 48, .55));
+  border-color: rgba(216, 180, 95, .55);
+}
+
+/* ---- 通用控件补漏（app.css）---- */
+[data-theme="dark"] .icon-btn {
+  background: rgba(14, 59, 46, .55);
+  border-color: rgba(169, 231, 205, .2);
+  color: rgba(234, 250, 242, .88);
+}
+[data-theme="dark"] .icon-btn:hover {
+  background: rgba(30, 99, 76, .8);
+  border-color: rgba(216, 180, 95, .6);
+  color: #f2dda4;
+}
+[data-theme="dark"] .search-box {
+  background: rgba(14, 59, 46, .55);
+  border-color: rgba(169, 231, 205, .22);
+}
+/* 自绘下拉 / 模型菜单 / 表情面板：白渐变浮层 → 深绿渐变浮层 */
+[data-theme="dark"] .dd__list,
+[data-theme="dark"] .model-menu,
+[data-theme="dark"] .expression-panel {
+  background: linear-gradient(160deg, rgba(20, 66, 51, .96), rgba(14, 48, 38, .94));
+  border-color: rgba(169, 231, 205, .25);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, .55);
+}
+[data-theme="dark"] .dd__opt,
+[data-theme="dark"] .model-menu__opt { color: rgba(234, 250, 242, .88); }
+[data-theme="dark"] .dd__opt:hover,
+[data-theme="dark"] .model-menu__opt:hover { background: rgba(30, 99, 76, .5); }
+/* 三色小标签：绿/金都压暗，墨金本就深不用动 */
+[data-theme="dark"] .tag-green {
+  background: rgba(30, 99, 76, .55);
+  border-color: rgba(169, 231, 205, .25);
+  color: #bff0dd;
+}
+[data-theme="dark"] .tag-gold {
+  background: rgba(74, 64, 48, .55);
+  border-color: rgba(216, 180, 95, .35);
+  color: #d9c184;
+}
+[data-theme="dark"] .view-head__icon {
+  background: linear-gradient(135deg, rgba(30, 99, 76, .8), rgba(18, 141, 107, .5));
+  border-color: rgba(169, 231, 205, .25);
+}
+
+/* ---- 聊天（chat.css）：气泡 / 头像 / 菜单 / 工具卡 / 搜索 ---- */
+/* AI 气泡：浅绿渐变 → 深绿渐变（文字 = --text-strong 已翻浅，底必须跟着压深） */
+[data-theme="dark"] .msg > div {
+  background: linear-gradient(135deg, rgba(30, 99, 76, .9), rgba(18, 141, 107, .72));
+  border-color: rgba(169, 231, 205, .22);
+  box-shadow: 0 18px 34px -24px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(169, 231, 205, .1);
+}
+/* 用户气泡：白→暖金渐变 → 深暖金渐变 */
+[data-theme="dark"] .msg.user > div {
+  background: linear-gradient(150deg, rgba(74, 64, 48, .9), rgba(58, 49, 32, .85));
+  border-color: rgba(216, 180, 95, .4);
+  box-shadow: 0 18px 34px -26px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(169, 231, 205, .08);
+}
+[data-theme="dark"] .msg::before {
+  background: radial-gradient(circle at 32% 28%, #1e634c, #0f4636 60%, #0a2b22);
+  border-color: rgba(169, 231, 205, .3);
+  color: #d9f5e8;
+}
+[data-theme="dark"] .msg.user::before {
+  background: radial-gradient(circle at 32% 28%, #4a4030, #332c1f 60%, #241f16);
+  border-color: rgba(216, 180, 95, .4);
+  color: #e6cf93;
+}
+[data-theme="dark"] .msg.error::before {
+  background: radial-gradient(circle at 32% 28%, #5c2b2b, #3d1c1c 60%, #2a1212);
+  color: #f0b4b4;
+}
+[data-theme="dark"] .msg.error > div {
+  background: linear-gradient(150deg, rgba(92, 43, 43, .85), rgba(61, 28, 28, .8));
+  border-color: rgba(214, 124, 124, .4);
+  color: #f0b4b4;
+  box-shadow: 0 14px 26px -22px rgba(0, 0, 0, .8);
+}
+/* 故事卡也是 .msg 的直接子 div，别被气泡规则误伤，恢复玻璃底 */
+[data-theme="dark"] .msg > div.storycard {
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-left: 3px solid var(--brand-mid);
+  box-shadow: var(--glass-shadow);
+}
+[data-theme="dark"] .msg__card {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(216, 180, 95, .3);
+}
+[data-theme="dark"] .msg__card-item + .msg__card-item { border-top-color: rgba(216, 180, 95, .25); }
+[data-theme="dark"] .chat__stop {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .25);
+  color: rgba(234, 250, 242, .88);
+}
+[data-theme="dark"] .chat__stop:hover { background: rgba(30, 99, 76, .8); }
+[data-theme="dark"] .chat__status { color: #7fd4b5; }
+[data-theme="dark"] .chat__select {
+  background: rgba(14, 59, 46, .55);
+  border-color: rgba(169, 231, 205, .22);
+  color: rgba(234, 250, 242, .88);
+}
+[data-theme="dark"] .chat__select:hover {
+  background: rgba(30, 99, 76, .8);
+  border-color: rgba(216, 180, 95, .6);
+}
+/* 9.1：工作目录触发器的已绑定态（dark 下压暗底、金描边保持） */
+[data-theme="dark"] .dir-trigger.is-active {
+  background: rgba(30, 99, 76, .55);
+  border-color: rgba(216, 180, 95, .75);
+}
+[data-theme="dark"] .dir-trigger__clear { color: rgba(234, 250, 242, .6); }
+[data-theme="dark"] .dir-trigger__clear:hover { background: rgba(216, 180, 95, .25); color: #f0d9a0; }
+[data-theme="dark"] .toolcard__args,
+[data-theme="dark"] .toolcard__output { background: rgba(7, 31, 25, .55); }
+[data-theme="dark"] .toolcard__btn { border-color: rgba(169, 231, 205, .22); }
+[data-theme="dark"] .storycard__opt:hover { background: rgba(30, 99, 76, .45); }
+[data-theme="dark"] .storycard__opt[data-chosen="true"] { color: var(--brand-bright); }
+[data-theme="dark"] .search-panel__input {
+  background: rgba(14, 59, 46, .55);
+  border-color: rgba(169, 231, 205, .22);
+}
+[data-theme="dark"] .search-panel__input:focus { border-color: rgba(18, 141, 107, .6); }
+[data-theme="dark"] .search-panel__hit {
+  background: rgba(14, 59, 46, .4);
+  border-color: rgba(169, 231, 205, .15);
+}
+[data-theme="dark"] .search-panel__hit:hover {
+  background: rgba(30, 99, 76, .55);
+  border-color: rgba(169, 231, 205, .28);
+}
+[data-theme="dark"] .search-panel__hit-role[data-role="user"] { background: rgba(18, 141, 107, .3); }
+[data-theme="dark"] .search-panel__hit-snippet mark { background: rgba(216, 180, 95, .35); }
+
+/* ---- 右栏状态面板（panel.css）---- */
+[data-theme="dark"] .panel-card__title,
+[data-theme="dark"] .panel-weather__row { color: rgba(234, 250, 242, .85); }
+[data-theme="dark"] .panel-note {
+  background: rgba(14, 59, 46, .5);
+  color: rgba(234, 250, 242, .8);
+}
+[data-theme="dark"] .panel-note--gold {
+  background: rgba(74, 64, 48, .55);
+  border-color: rgba(216, 180, 95, .35);
+}
+[data-theme="dark"] .panel-overview__cell,
+[data-theme="dark"] .mood-chip {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .18);
+}
+[data-theme="dark"] .mood-chip[data-active="true"] {
+  background: linear-gradient(120deg, var(--brand), var(--brand-bright));
+  border-color: rgba(169, 231, 205, .3);
+  color: #fff;
+}
+[data-theme="dark"] .panel-mood__current { color: #7fd4b5; }
+[data-theme="dark"] .panel-card__badge {
+  background: rgba(30, 99, 76, .55);
+  border-color: rgba(169, 231, 205, .25);
+  color: #bff0dd;
+}
+[data-theme="dark"] .panel-metric__track,
+[data-theme="dark"] .panel-bar__track { background: rgba(234, 250, 242, .14); }
+
+/* ---- 任务（tasks.css）---- */
+[data-theme="dark"] .task-card {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .18);
+}
+[data-theme="dark"] .task-card:hover { background: rgba(30, 99, 76, .55); }
+[data-theme="dark"] .task-card__note {
+  background: rgba(14, 59, 46, .5);
+  color: rgba(234, 250, 242, .8);
+}
+[data-theme="dark"] .task-check { background: rgba(14, 59, 46, .6); }
+[data-theme="dark"] .tasks__bar,
+[data-theme="dark"] .task-progress { background: rgba(234, 250, 242, .14); }
+
+/* ---- 记忆（memory.css）---- */
+[data-theme="dark"] .recall-box,
+[data-theme="dark"] .recall-item {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .18);
+}
+[data-theme="dark"] .recall-item:hover {
+  background: rgba(30, 99, 76, .55);
+  border-color: rgba(216, 180, 95, .5);
+}
+[data-theme="dark"] .recall-item[data-current="true"] {
+  background: linear-gradient(120deg, rgba(74, 64, 48, .7), rgba(30, 99, 76, .5));
+  border-color: rgba(216, 180, 95, .5);
+}
+[data-theme="dark"] .recall-item[data-stale="true"]:hover {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .18);
+}
+[data-theme="dark"] .recall-item__op {
+  background: rgba(14, 59, 46, .55);
+  border-color: rgba(169, 231, 205, .2);
+  color: rgba(234, 250, 242, .85);
+}
+[data-theme="dark"] .recall-item__op:hover { border-color: rgba(216, 180, 95, .6); color: var(--gold-text); }
+[data-theme="dark"] .recall-item__input {
+  background: rgba(14, 59, 46, .7);
+  border-color: rgba(216, 180, 95, .45);
+}
+[data-theme="dark"] .recall-empty {
+  background: rgba(14, 59, 46, .45);
+  border-color: rgba(216, 180, 95, .4);
+}
+[data-theme="dark"] .recall-empty__icon {
+  background: linear-gradient(135deg, rgba(30, 99, 76, .8), rgba(18, 141, 107, .5));
+  border-color: rgba(169, 231, 205, .25);
+}
+
+/* ---- 设置页子组件补漏（settings.css）---- */
+[data-theme="dark"] .voice-engine__meta,
+[data-theme="dark"] .voice-hint,
+[data-theme="dark"] .im-qr__hint,
+[data-theme="dark"] .about-credit__use,
+[data-theme="dark"] .about-credit__url,
+[data-theme="dark"] .about-license__url,
+[data-theme="dark"] .audit-row__time,
+[data-theme="dark"] .audit-row__args,
+[data-theme="dark"] .ui-save-status,
+[data-theme="dark"] .music-feedback,
+[data-theme="dark"] .music-status__meta p,
+[data-theme="dark"] .music-qr__meta p,
+[data-theme="dark"] .music-track__meta span {
+  color: rgba(234, 250, 242, .72);
+}
+[data-theme="dark"] .voice-result,
+[data-theme="dark"] .im-card__result,
+[data-theme="dark"] .about-env__item,
+[data-theme="dark"] .audit-list {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .18);
+  color: rgba(234, 250, 242, .8);
+}
+[data-theme="dark"] .lt-row__text,
+[data-theme="dark"] #up-manual,
+[data-theme="dark"] .persona-preview,
+[data-theme="dark"] .up-auto {
+  background: rgba(14, 59, 46, .55);
+  border-color: rgba(169, 231, 205, .22);
+}
+[data-theme="dark"] .im-row {
+  background: rgba(14, 59, 46, .5);
+  border-color: rgba(169, 231, 205, .18);
+  color: rgba(234, 250, 242, .8);
+}
+[data-theme="dark"] .im-row__name { color: #eafaf2; }
+[data-theme="dark"] .im-row__code {
+  background: rgba(30, 99, 76, .55);
+  color: rgba(234, 250, 242, .72);
+}

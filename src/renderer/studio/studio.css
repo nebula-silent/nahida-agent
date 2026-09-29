@@ -1,0 +1,382 @@
+/* 2.7 返工：工具箱视图样式（花园工作台）
+   素材源：原型 studio.html（不再参考清单 §3/§1.6 的读图色值）
+   结构：标签页行（4 个纯文字 .tab-btn，选中态在 app.css）→ 面板（工具箱 6 卡 / 截图·录屏·直播居中占位） */
+
+/* ===== ① 标签页行：分隔线在标签页下方（原型头块 border-b 把标题行+标签页行一起包住） ===== */
+.studio__tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding: 0 24px 16px; /* 原型头块 px-6 py-4（2026-09-27 对齐） */
+  margin-bottom: 20px; /* 原型滚动区 py-5 顶 = 分隔线→首卡 20px（曾误写 16px） */
+  border-bottom: 1px solid rgba(255, 255, 255, .6);
+}
+
+/* ===== ② 面板容器 ===== */
+.studio__panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 0 24px 20px; /* 原型滚动区 px-6 py-5（2026-09-27 对齐） */
+}
+/* 显式规则：display:flex 会覆盖 hidden 属性的 UA display:none，必须补回 */
+.studio__panel[hidden] { display: none; }
+
+/* ===== ③ 工具箱面板：6 卡网格（清单 §3：间距 12px） ===== */
+.studio__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* 原型 md:grid-cols-2（≥768，窗口最小 1180 恒成立） */
+  gap: 12px;
+  align-content: start;
+}
+/* 原型 xl:grid-cols-3：≥1280 才三列；1180~1279 必须是两列。
+   曾写成「基准 3 列 + max-width:1180 退 2 列」——1180 恰是窗口最小值，等于永远 3 列，逻辑反了（2026-09-27 修） */
+@media (min-width: 1280px) {
+  .studio__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* 卡片：半透明白底 + 细白边，圆角 22px（原型 rounded-[22px] = --r-inner）
+   注意：不走 .glass，不加 backdrop-filter */
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border-radius: var(--r-inner);
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .55);
+  transition: transform var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
+}
+/* 悬停：上浮 2px + 金色描边（原型 .card-hover） */
+.tool-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(216, 180, 95, .65);
+  box-shadow: 0 22px 34px -26px rgba(14, 59, 46, .7);
+}
+
+/* 图标 + 标题同一行 */
+.tool-card__head { display: flex; align-items: center; gap: 12px; }
+
+/* 图标盒 40×40 / 圆角 16px；默认绿底绿字 */
+.tool-card__icon {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: linear-gradient(135deg, #e9fbf2, #b9ecd8);
+  color: #0d7a5b;
+}
+
+.tool-card__title { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-strong); line-height: 1.4; }
+.tool-card__desc { margin: 8px 0 0; font-size: 12px; color: rgba(14, 59, 46, .7); line-height: 1.625; }
+.tool-card .btn-soft { margin-top: 12px; align-self: flex-start; }
+
+/* ===== ③-1 工具箱面板 · MCP/插件 目录（8.7.4 骨架；复用 .tab-btn / .studio__grid 观感，独立类名防与外层标签逻辑冲突） ===== */
+/* 顶部 MCP/插件 切换条：同 .studio__tabs 布局（却开口 → 卡片），分隔线随标签 */
+.tools-subtabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding: 0 0 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, .6);
+}
+/* 复用 .tab-btn 观感：胶囊 / hover 金色边 / 选中深绿渐变 */
+.tools-subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: transparent;
+  color: var(--text-strong);
+  cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast);
+}
+.tools-subtab:hover { border-color: rgba(216, 180, 95, .6); }
+.tools-subtab.active {
+  background: linear-gradient(120deg, #128d6b, #3fbf95);
+  border-color: rgba(255, 255, 255, .85);
+  color: #fff;
+  box-shadow: 0 12px 24px -16px rgba(18, 141, 107, .95);
+}
+
+/* 分区容器：纵向滚动列；hidden 必须显式盖回 display:flex */
+.tools-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.tools-section[hidden] { display: none; }
+
+/* 卡片网格：同 .studio__grid（2 列 → ≥1280 三列） */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+@media (min-width: 1280px) {
+  .tools-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* 8.7.5：MCP 无配置引导 → MCP 页主界面正中间（2026-09-29 改 flex 双轴居中：
+   grid 的 align-content 在部分高度场景下仍会顶到上方，改 display:flex 让空态相对本页主区域水平 + 垂直都居中） */
+.tools-grid:has(> .tools-none) {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
+}
+
+/* 8.7.5：MCP 目录动态渲染的无配置引导（复用空态视觉，占满整行） */
+.tools-none {
+  margin: 0;
+  padding: 18px 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+/* 底部说明：贴面板底部居中（原型 text-[11.5px]） */
+.studio__note {
+  margin-top: auto;
+  padding: 12px 0 0;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 300;
+  color: var(--text-faint);
+}
+
+/* ===== ④ 截图 / 录屏 / 直播：居中占位（2.7b/c/d 补齐） ===== */
+.studio__placeholder {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.studio__placeholder-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: linear-gradient(135deg, #e9fbf2, #b9ecd8);
+  color: var(--brand);
+}
+.studio__placeholder-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+.studio__placeholder-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ===== ⑤ 影像线三面板共用（2.7b/c/d）
+   素材源：原型 studio.html 的 #capture / #record / #live（glass rounded-[22px] p-4）
+   注意：卡片用 .glass（原型就是 glass），与工具箱那 6 张不带 glass 的卡不同 ===== */
+.media-card {
+  padding: 16px;
+  border-radius: var(--r-inner);
+}
+.media-card + .media-card { margin-top: 12px; }
+.media-card__title { margin: 0; font-size: 13px; font-weight: 600; color: rgba(14, 59, 46, .8); }
+.media-card__head { display: flex; align-items: center; justify-content: space-between; }
+
+/* 一行：标签 + 分段 + 右侧操作 */
+.media-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.media-bar--sub { margin-top: 12px; }
+.media-bar__label { font-size: 13px; font-weight: 600; color: rgba(14, 59, 46, .8); }
+.media-bar__end { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.media-seg { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.media-field { font-size: 12px; color: rgba(14, 59, 46, .7); }
+.media-select {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .85);
+  /* 只写 background-color：箭头背景图由 app.css 的全局 select 规则提供 */
+  background-color: rgba(255, 255, 255, .7);
+  padding: 6px 28px 6px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text-strong);
+}
+.media-select--wide { min-width: 280px; }
+
+/* 开关行：横向排 + 自动换行 */
+.media-switches {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  font-size: 12px;
+  color: rgba(14, 59, 46, .75);
+}
+.media-switches--stack { flex-direction: column; align-items: flex-start; gap: 12px; }
+.media-switch { display: flex; align-items: center; gap: 8px; }
+.media-path { color: var(--text-muted); }
+.media-path > span { color: var(--gold-text); word-break: break-all; }
+
+/* 小节标题 / 状态行 */
+.media-subhead { margin: 16px 0 0; font-size: 13px; font-weight: 600; color: rgba(14, 59, 46, .8); }
+.media-status { margin: 12px 0 0; font-size: 11.5px; font-weight: 300; color: var(--text-muted); }
+.media-status--error { color: #b4453a; }   /* 错误保持红，不改成品牌色 */
+.media-empty { margin: 12px 0 0; font-size: 12px; color: var(--text-muted); }
+
+/* 截图缩略图网格（原型 md:grid-cols-2 xl:grid-cols-3） */
+.shot-grid { margin-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 1280px) { .shot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.shot-card {
+  margin: 0;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: linear-gradient(135deg, #eafaf2, #bfe8d6);
+}
+.shot-card img { display: block; width: 100%; height: 144px; object-fit: cover; }
+.shot-card__cap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  color: rgba(14, 59, 46, .75);
+}
+.shot-card__act {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.shot-card__act:hover { color: var(--gold-text); }
+
+/* ===== ⑥ 录屏（2.7c） ===== */
+.media-split { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+@media (max-width: 1180px) { .media-split { grid-template-columns: minmax(0, 1fr); } }
+
+/* 纵向堆叠容器：一列里放多张卡片（直播面板右列 = 预览 + 推流日志两张独立框） */
+.media-stack { display: grid; gap: 12px; align-content: start; }
+
+.media-form { margin-top: 12px; display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.media-form--stack { grid-template-columns: minmax(0, 1fr); }
+.media-form__row { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.media-form .media-field { display: flex; flex-direction: column; gap: 6px; }
+/* §6.4 录屏：自绘 .dd 是 inline-block 随内容撑宽，长采集源名会把「录制区域」
+   撑出网格列、压到右列「帧率」——收进列内，尾部交给 .dd__label 的原生 ellipsis 截断
+   （不全程加 mask 渐隐：label 恒为整行宽，mask 会把「60 fps」这类短选项也虚化） */
+[data-panel="record"] .media-form .dd { width: 100%; max-width: 100%; min-width: 0; }
+[data-panel="record"] .media-form .dd__btn { width: 100%; min-width: 0; }
+
+.media-actions { margin-top: 16px; display: flex; align-items: center; gap: 12px; }
+
+.record-preview {
+  margin-top: 12px;
+  height: 160px;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: linear-gradient(135deg, #0e3b2e, #128d6b);
+}
+.record-preview video { width: 100%; height: 100%; object-fit: contain; background: #0e3b2e; }
+
+/* 波形：柱高由 AnalyserNode 实时驱动（不假装） */
+.record-wave {
+  margin-top: 12px;
+  height: 48px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .6);
+}
+.record-wave__bar {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, var(--brand-soft), var(--brand));
+  transition: height .08s linear;
+}
+
+.record-list { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.record-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .6);
+  font-size: 12px;
+  color: var(--text-strong);
+}
+.record-row > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-row__size { margin-left: auto; color: var(--text-muted); flex: none; }
+
+/* ===== ⑦ 直播（2.7d） ===== */
+.live-preview {
+  margin-top: 12px;
+  height: 192px;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: linear-gradient(135deg, #0b2a22, #128d6b);
+}
+.live-preview video { width: 100%; height: 100%; object-fit: contain; background: #0b2a22; }
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: rgba(10, 54, 42, .88);
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--gold-soft);
+}
+.live-badge[hidden] { display: none; }
+.live-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--brand-bright);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.live-log {
+  margin: 8px 0 0;
+  max-height: 132px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(10, 54, 42, .88);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #cdebdd;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

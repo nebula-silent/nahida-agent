@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<!-- nahida 应用外壳 v2 · 三栏玻璃拟态
+     重写自阶段一外壳（旧版备份 .backup/renderer-v1-dark-20260926/）。
+     结构：装饰层 + 侧边栏（248）+ 主区（顶部栏 + 视图区）+ 右侧栏（320）
+     main.ts 依赖的 8 个 id 全部保留：
+     #messages / #empty-tip / #status / #model-select / #input / #composer / #btn-send / #btn-stop
+     另有 #app-version（getVersion 写入，footer 里）。
+     2.8 起 #panel 为透明滚动列（不再是玻璃容器），卡片见 panel/panel.css。
+     data-view 严格与侧边栏导航项同名（2026-09-26 起 6 项）：chat / tasks / studio / memory / settings / about
+     2.9 起 tasks 视图已落地（卡片由 tasks/tasks.ts 渲染，数据集中在其数据层）。
+     2.10 起 memory 视图已落地；5.5.2 起重写为「回忆 · 存档中心」（两框由 memory/memory.ts 渲染，数据集中在其数据层）。
+     2.11 起 settings / about 视图已落地（卡片由 settings/settings.ts 渲染，数据集中在其数据层）。
+     截图 / 录屏 / 直播 / 游戏不设侧边栏项，2.7 起以标签页并入工具箱视图 -->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nahida</title>
+  <link rel="stylesheet" href="./ui/tokens.css" />
+  <link rel="stylesheet" href="./ui/glass.css" />
+  <link rel="stylesheet" href="./ui/base.css" />
+  <link rel="stylesheet" href="./app.css" />
+  <link rel="stylesheet" href="./sidebar/sidebar.css" />
+  <link rel="stylesheet" href="./chat/chat.css" />
+  <link rel="stylesheet" href="./studio/studio.css" />
+  <link rel="stylesheet" href="./panel/panel.css" />
+  <link rel="stylesheet" href="./tasks/tasks.css" />
+  <link rel="stylesheet" href="./memory/memory.css" />
+  <link rel="stylesheet" href="./settings/settings.css" />
+  <link rel="stylesheet" href="./voice/call.css" /><!-- 4.9 通话浮层 -->
+</head>
+<body>
+  <div id="app">
+    <!-- ===== 背景装饰层（2.2 已落位：符文环 + 世界树 + 净善宫 + 8 光点） ===== -->
+    <div id="bg" aria-hidden="true">
+      <span class="rune-mark" style="left:47%;top:10%;width:300px;height:300px;opacity:.22"></span>
+      <span class="rune-mark" style="left:8%;top:62%;width:190px;height:190px;opacity:.16"></span>
+      <svg class="world-tree" width="1200" height="620" viewBox="0 0 1200 620">
+        <g fill="none" stroke="#0f5c45" stroke-linecap="round">
+          <path d="M600 620 L600 300" stroke="#d8b45f" stroke-opacity=".55" stroke-width="34"></path>
+          <path d="M600 620 L600 300" stroke-width="26"></path>
+          <path d="M600 388 C540 348 500 306 470 240" stroke="#3fbf95" stroke-opacity=".5" stroke-width="22"></path>
+          <path d="M600 388 C540 348 500 306 470 240" stroke-width="16"></path>
+          <path d="M600 344 C660 304 700 262 730 200" stroke="#3fbf95" stroke-opacity=".5" stroke-width="22"></path>
+          <path d="M600 344 C660 304 700 262 730 200" stroke-width="16"></path>
+          <path d="M600 300 C570 262 560 220 556 168" stroke="#a9e7cd" stroke-opacity=".55" stroke-width="17"></path>
+          <path d="M600 300 C570 262 560 220 556 168" stroke-width="12"></path>
+          <path d="M600 300 C632 268 648 232 656 186" stroke="#a9e7cd" stroke-opacity=".55" stroke-width="17"></path>
+          <path d="M600 300 C632 268 648 232 656 186" stroke-width="12"></path>
+          <path d="M470 240 C440 214 420 196 392 182" stroke="#d8b45f" stroke-opacity=".45" stroke-width="12"></path>
+          <path d="M470 240 C440 214 420 196 392 182" stroke-width="8"></path>
+          <path d="M730 200 C758 182 782 172 810 166" stroke="#d8b45f" stroke-opacity=".45" stroke-width="12"></path>
+          <path d="M730 200 C758 182 782 172 810 166" stroke-width="8"></path>
+        </g>
+        <g fill="#0f5c45" opacity=".55">
+          <ellipse cx="600" cy="150" rx="152" ry="70"></ellipse>
+          <ellipse cx="470" cy="206" rx="96" ry="48"></ellipse>
+          <ellipse cx="736" cy="176" rx="100" ry="50"></ellipse>
+          <ellipse cx="556" cy="118" rx="70" ry="38"></ellipse>
+          <ellipse cx="662" cy="216" rx="74" ry="36"></ellipse>
+        </g>
+      </svg>
+      <svg class="palace" width="420" height="240" viewBox="0 0 420 240">
+        <g fill="#0f5c45">
+          <path d="M210 30c40 26 62 58 62 92H148c0-34 22-66 62-92z"></path>
+          <rect height="70" rx="6" width="140" x="140" y="122"></rect>
+          <rect height="16" rx="8" width="180" x="120" y="186"></rect>
+          <rect height="56" rx="10" width="26" x="96" y="150"></rect>
+          <rect height="56" rx="10" width="26" x="298" y="150"></rect>
+          <rect height="14" rx="7" width="280" x="70" y="192"></rect>
+        </g>
+        <g fill="#fdf6e3" opacity=".85">
+          <path d="M210 62c14 12 22 26 24 40h-48c2-14 10-28 24-40z"></path>
+          <rect height="52" rx="6" width="28" x="196" y="130"></rect>
+        </g>
+      </svg>
+      <span class="orb" style="left:12%;top:20%;width:10px;height:10px;animation-delay:.2s"></span>
+      <span class="orb" style="left:24%;top:52%;width:7px;height:7px;animation-delay:1.4s"></span>
+      <span class="orb" style="left:38%;top:14%;width:8px;height:8px;animation-delay:2.6s"></span>
+      <span class="orb" style="left:52%;top:64%;width:6px;height:6px;animation-delay:.9s"></span>
+      <span class="orb" style="left:66%;top:26%;width:9px;height:9px;animation-delay:3.2s"></span>
+      <span class="orb" style="left:78%;top:58%;width:7px;height:7px;animation-delay:1.9s"></span>
+      <span class="orb" style="left:88%;top:18%;width:11px;height:11px;animation-delay:2.2s"></span>
+      <span class="orb" style="left:44%;top:82%;width:8px;height:8px;animation-delay:3.8s"></span>
+    </div>
+
+    <!-- ===== 侧边栏（248px glass；2.4 按规范 §5.2 重做：品牌卡 + 10 项导航 + glass-deep 版本卡） ===== -->
+    <aside id="sidebar" class="glass">
+      <div class="sidebar__body no-sb">
+        <!-- 品牌区：内嵌玻璃卡，立绘头像（assets/avatar.png）+ 状态胶囊 -->
+        <section class="brand">
+          <div class="brand__avatar">
+            <div class="brand__avatar-core" aria-hidden="true">
+              <!-- 头像：用户指定立绘（116599964_p0.png 缩至 256²，原文件在项目根） -->
+              <img src="./assets/avatar.png" alt="" />
+            </div>
+            <span class="brand__dot" aria-hidden="true"></span>
+          </div>
+          <p class="brand__name">纳西妲</p>
+          <p class="brand__status" data-state="unknown">
+            <span class="brand__status-ico" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span>
+            <span class="brand__status-text">未连接</span>
+          </p>
+        </section>
+
+        <nav class="sidebar__nav" aria-label="主导航">
+          <!-- 1. 聊天（默认激活） -->
+          <button type="button" class="menu-item active" data-view="chat">
+            <span class="menu-item__icon" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+            </span><span>聊天</span>
+          </button>
+          <!-- 2. 回忆（5.5.2 起为存档中心；data-view 仍为 memory，不改键。7.4 起移到「聊天」与「任务」之间） -->
+          <button type="button" class="menu-item" data-view="memory">
+            <span class="menu-item__icon" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
+            </span><span>回忆</span>
+          </button>
+          <!-- 3. 任务 -->
+          <button type="button" class="menu-item" data-view="tasks">
+            <span class="menu-item__icon" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
+            </span><span>任务</span>
+          </button>
+          <!-- 4. 工具箱（游戏已并入工作台的「游戏」标签，2026-09-26 用户决定） -->
+          <button type="button" class="menu-item" data-view="studio">
+            <span class="menu-item__icon" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </span><span>工作台</span>
+          </button>
+          <!-- 5. 设置 -->
+          <button type="button" class="menu-item" data-view="settings">
+            <span class="menu-item__icon" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </span><span>设置</span>
+          </button>
+          <!-- 6. 关于 -->
+          <button type="button" class="menu-item" data-view="about">
+            <span class="menu-item__icon" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            </span><span>关于</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- 运行状态卡（3.8）：.glass-deep 深色玻璃；文案由 sidebar.ts 读状态层渲染，与视图无关 -->
+      <footer class="sidebar__footer glass-deep" data-state="unknown">
+        <p class="sidebar__footer-title"><span class="sidebar__footer-ico" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span><span class="sidebar__footer-text">未选择模型</span></p>
+        <p class="sidebar__footer-sub">草元素共鸣待机</p>
+      </footer>
+    </aside>
+
+    <!-- ===== 主内容区（普通 flex 容器，自身无玻璃） ===== -->
+    <main id="container">
+      <!-- 顶部栏（规范 §5.3：整条 drag，交互元素逐个 no-drag；.glass 玻璃材质） -->
+      <header id="topbar" class="topbar glass">
+        <!-- 左：44×44 头像（同侧边栏立绘，带在线点）+ 两行状态 -->
+        <div class="topbar__who">
+          <div class="topbar__avatar">
+            <div class="topbar__avatar-core" aria-hidden="true">
+              <!-- 头像：与侧边栏同一张立绘 -->
+              <img src="./assets/avatar.png" alt="" />
+            </div>
+            <span class="topbar__dot" aria-hidden="true" data-state="unknown"></span>
+          </div>
+          <div class="topbar__meta">
+            <p class="topbar__title">纳西妲</p>
+            <p class="topbar__sub" id="topbar-sub">未连接</p>
+          </div>
+        </div>
+        <span class="topbar__spacer"></span>
+        <!-- 右侧工具组：7.4 聊天/工作切换按钮（最前）+ 窗口按钮组（搜索按钮与精华胶囊已于 3.9 删除、天气胶囊与通知按钮已于 6.2 删除：纯装饰、零功能） -->
+        <div class="topbar__tools">
+          <!-- 7.4：聊天/工作模式切换 —— 按钮式两态翻转（聊天=气泡 icon；工作=扳手 icon + .active 高亮）；
+               图标与高亮由 main.ts renderUiMode() 驱动，这里只放初始聊天态的静态标记 -->
+          <button type="button" class="icon-btn no-drag" id="mode-toggle" title="聊天模式（不调用工具）· 点击切换到工作" aria-label="聊天模式（不调用工具）· 点击切换到工作" aria-pressed="false">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+          </button>
+          <button type="button" class="icon-btn no-drag" id="win-min" title="最小化" aria-label="最小化">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+          </button>
+          <button type="button" class="icon-btn no-drag" id="win-max" title="最大化" aria-label="最大化">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="5" y="5" rx="1" ry="1"/></svg>
+          </button>
+          <button type="button" class="icon-btn no-drag" id="win-close" title="关闭" aria-label="关闭">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- 主列第二行：左侧聊天玻璃 + 右侧状态玻璃 -->
+      <div class="main-row">
+        <!-- 视图区（自身就是玻璃面板，.glass 在 HTML 上） -->
+        <div class="view-area glass no-sb">
+        <!-- 聊天视图 · 2.6 按清单 §2 从零重写；main.ts 依赖的 8 个 id 全部保留：
+             #messages #empty-tip #status #model-select #input #composer #btn-send #btn-stop -->
+        <section class="view" data-view="chat">
+          <!-- ① 视图头：6.1 瘦身——logo/品牌文字已删，只剩模型下拉（搜索移入输入框 composer-tools） -->
+          <header class="view-head">
+            <div class="view-head__tools">
+              <!-- 模型下拉：自绘 trigger（组件 chat/model-dropdown.ts，菜单动态挂 body；不感知模型来源，兼容未来多厂商） -->
+              <div id="model-select" class="chat__select model-trigger" role="button" tabindex="0"
+                   aria-haspopup="listbox" aria-expanded="false" title="选择模型"></div>
+              <!-- 8.12：工具授权面板按钮（组件 chat/tool-panel.ts；头部按钮 + 模态 —— 归位总表 L72：不进设置页） -->
+              <button id="btn-tools" type="button" class="icon-btn icon-btn--round" title="工具授权" aria-label="工具授权" aria-haspopup="dialog" aria-expanded="false">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              </button>
+              <!-- 9.1：工作目录选择（组件 chat/workdir-picker.ts；点 = 弹目录框绑定本对话，× = 清除恢复未选择）；视图头最右 = 用户指的「右上角」 -->
+              <div id="workdir-select" class="chat__select dir-trigger" role="button" tabindex="0"
+                   title="选择本对话允许她读写的目录（新对话不继承）"></div>
+            </div>
+          </header>
+
+          <!-- ② 消息区：气泡由 main.ts appendMessage 动态生成（div.msg.{role} > span.role + div） -->
+          <div id="messages" class="chat__messages no-sb">
+            <div id="empty-tip" class="chat__empty">她安静地陪着你——想说的话，直接打出来就好。</div>
+          </div>
+
+          <!-- ③ 输入区（玻璃材质走 .glass）；6.1：chip 行已删，搜索按钮移入 composer-tools -->
+          <form id="composer" class="chat__composer glass">
+            <span class="chat__composer-leaf" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            </span>
+            <textarea id="input" rows="1" placeholder="说点什么吧"></textarea>
+            <div class="chat__composer-tools">
+              <!-- 6.1：搜索从视图头移入；历史对话搜索面板（组件 chat/search-panel.ts）挂本按钮 -->
+              <button id="btn-search" type="button" class="icon-btn icon-btn--round" title="搜索历史对话" aria-label="搜索历史对话" aria-haspopup="dialog" aria-expanded="false">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </button>
+              <!-- 7.7：表情面板挂这里（组件 chat/expression-panel.ts；点击微信式直发 [词]） -->
+              <button id="btn-expression" type="button" class="icon-btn icon-btn--round" title="表情" aria-label="表情" aria-haspopup="menu" aria-expanded="false">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
+              </button>
+              <button id="btn-stop" type="button" class="chat__stop" hidden>停止</button>
+              <button id="btn-send" type="submit" class="chat__send">发送</button>
+            </div>
+          </form>
+
+          <!-- ⑤ 底部状态行：#status 动态状态（main.ts setStatus 写文字）+ 静态提示 -->
+          <p class="chat__statusline">
+            <span id="status" class="chat__status">连接中…</span>
+            <span class="chat__statusline-hint">草元素共鸣已连接 · Enter 发送 / Shift + Enter 换行</span>
+          </p>
+        </section>
+
+        <!-- 占位视图（2026-09-26：6 对 6，游戏并入工作台）；截图/录屏/直播在 2.7 以标签页并入工具箱视图 -->
+        <!-- 任务视图 · v1 占位（5.11）：硬编码数据已从 tasks/tasks.ts 删除，仅保留左栏入口 + 占位文案；
+             渲染与交互骨架保留在 tasks.ts，开闸后恢复数据表与视图结构（见 git 历史） -->
+        <section class="view view--hidden" data-view="tasks">
+          <header class="view-head">
+            <span class="view-head__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
+            </span>
+            <div class="view-head__meta">
+              <h2 class="view-head__title" id="tasks-title">任务 · 后续版本将逐步开放</h2>
+            </div>
+          </header>
+          <div class="tasks__body no-sb">
+            <div class="tasks__placeholder">后续版本将逐步开放</div>
+          </div>
+        </section>
+        <!-- 工具箱视图（原 5 标签含「游戏」，2026-09-29 起游戏暂缓移出，剩 4 个：工具箱/截图/录屏/直播；截图/录屏/直播三面板为居中占位，拆 2.7b/c/d 补齐） -->
+        <section class="view view--hidden" data-view="studio">
+          <!-- ① 视图头（共用 .view-head 结构） -->
+          <header class="view-head">
+            <span class="view-head__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+            </span>
+            <div class="view-head__meta">
+              <h2 class="view-head__title">工作台</h2>
+              <p class="view-head__sub" id="studio-hint">六件常用工具，全部在本地运行。</p>
+            </div>
+          </header>
+
+          <!-- ② 标签页行：4 个纯文字（选中态 = 深绿渐变+白字，样式在 app.css 的 .tab-btn）
+               2026-09-29 用户决定：游戏标签暂缓（暂不做），移出工作台；恢复时解开下方注释与面板注释 -->
+          <div class="studio__tabs" role="tablist" aria-label="工作台面板">
+            <!-- <button type="button" class="tab-btn" data-tab="games" role="tab" aria-selected="false">游戏</button> -->
+            <button type="button" class="tab-btn active" data-tab="tools" role="tab" aria-selected="true">工具箱</button>
+            <button type="button" class="tab-btn" data-tab="capture" role="tab" aria-selected="false">截图</button>
+            <button type="button" class="tab-btn" data-tab="record" role="tab" aria-selected="false">录屏</button>
+            <button type="button" class="tab-btn" data-tab="live" role="tab" aria-selected="false">直播</button>
+          </div>
+
+          <!-- ③-0 游戏面板：居中占位（2026-09-29 起随标签一并暂缓；恢复时解开，2.7e 补齐真实内容） -->
+          <!-- <div class="studio__panel" data-panel="games" hidden>
+            <div class="studio__placeholder">
+              <span class="studio__placeholder-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h4"/><path d="M8 10v4"/><path d="M15 13h.01"/><path d="M18 11h.01"/><rect width="20" height="12" x="2" y="6" rx="2"/></svg></span>
+              <p class="studio__placeholder-title">游戏面板</p>
+              <p class="studio__placeholder-sub">把玩一会儿，或者记录此刻的画面。游戏卡片将在此处补齐（2.7e）</p>
+            </div>
+          </div> -->
+
+          <!-- ③ 工具箱面板：8.7.4 起改为 MCP / 插件 目录骨架（顶部两按钮切换；数据分 8.7.5 MCP / 8.7.6 插件补齐） -->
+          <div class="studio__panel" data-panel="tools">
+            <!-- 顶部 MCP / 插件切换：只在「工具箱」标签内显示；用独立类 .tools-subtab，避免与外层 .studio__tabs 切换逻辑冲突 -->
+            <div class="tools-subtabs" role="tablist" aria-label="工具分区">
+              <button type="button" class="tools-subtab active" data-subtab="mcp" role="tab" aria-selected="true">MCP</button>
+              <button type="button" class="tools-subtab" data-subtab="plugin" role="tab" aria-selected="false">插件</button>
+            </div>
+
+            <!-- MCP 目录（8.7.5 填数据） -->
+            <div class="tools-section" data-subsection="mcp">
+              <div class="tools-grid" id="tools-mcp-grid"></div>
+            </div>
+
+            <!-- 插件目录（8.7.6 填数据） -->
+            <div class="tools-section" data-subsection="plugin" hidden>
+              <div class="tools-grid" id="tools-plugin-grid"></div>
+            </div>
+
+            <p class="studio__note">MCP 与插件 · 全部在本地运行，不经过任何云端。</p>
+          </div>
+
+          <!-- ④ 三个占位面板（居中占位，2.7b / 2.7c / 2.7d 补齐） -->
+          <!-- ③-1 截图面板（2.7b）：方式 / 采集源 / 延时 / 开关 / 缩略图网格 -->
+          <div class="studio__panel" data-panel="capture" hidden>
+            <div class="media-card glass">
+              <div class="media-bar">
+                <span class="media-bar__label">截图方式</span>
+                <div class="media-seg" id="capture-mode">
+                  <button type="button" class="seg" data-mode="full" data-on="true">全屏</button>
+                  <button type="button" class="seg" data-mode="window" data-on="false">窗口</button>
+                  <button type="button" class="seg" data-mode="area" data-on="false">区域</button>
+                </div>
+                <div class="media-bar__end">
+                  <label class="media-field" for="capture-delay">延时</label>
+                  <select id="capture-delay" class="media-select">
+                    <option value="0" selected>立即</option>
+                    <option value="3000">3 秒</option>
+                    <option value="5000">5 秒</option>
+                    <option value="10000">10 秒</option>
+                  </select>
+                  <button type="button" class="btn-gold" id="capture-take">立即截图</button>
+                </div>
+              </div>
+
+              <!-- 采集源：原型没有（原型写死「全屏」），§6 偏差 ② 要求补 -->
+              <div class="media-bar media-bar--sub">
+                <label class="media-field" for="capture-source">采集源</label>
+                <select id="capture-source" class="media-select media-select--wide"></select>
+              </div>
+
+              <div class="media-switches">
+                <label class="media-switch">复制到剪贴板 <button type="button" class="switch" data-key="copyToClipboard" data-on="true"><span></span></button></label>
+                <label class="media-switch">显示光标 <button type="button" class="switch" data-key="showCursor" data-on="false"><span></span></button></label>
+                <label class="media-switch">保存原始尺寸 <button type="button" class="switch" data-key="rawSize" data-on="true"><span></span></button></label>
+                <span class="media-path">保存路径：<span id="capture-dir">…</span></span>
+                <button type="button" class="btn-soft" id="capture-pick-dir">选择目录</button>
+              </div>
+            </div>
+
+            <p class="media-subhead">最近截图</p>
+            <div class="shot-grid" id="capture-grid"></div>
+            <p class="media-status" id="capture-status">正在读取影像库…</p>
+          </div>
+          <!-- ③-2 录屏面板（2.7c）：设置 / 预览 / 波形 / 最近录制 -->
+          <div class="studio__panel" data-panel="record" hidden>
+            <div class="media-split">
+              <div class="media-card glass">
+                <p class="media-card__title">录制设置</p>
+                <div class="media-form">
+                  <label class="media-field">录制区域
+                    <select id="record-source" class="media-select"></select>
+                  </label>
+                  <label class="media-field">帧率
+                    <select id="record-fps" class="media-select">
+                      <option value="60">60 fps</option>
+                      <option value="30" selected>30 fps</option>
+                      <option value="24">24 fps</option>
+                    </select>
+                  </label>
+                  <label class="media-field">编码
+                    <select id="record-codec" class="media-select">
+                      <option value="vp9" selected>VP9 · 体积小</option>
+                      <option value="vp8">VP8 · 兼容优先</option>
+                    </select>
+                  </label>
+                  <label class="media-field">码率
+                    <select id="record-bitrate" class="media-select">
+                      <option value="12000000" selected>12 Mbps</option>
+                      <option value="8000000">8 Mbps</option>
+                      <option value="20000000">20 Mbps</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="media-switches media-switches--stack">
+                  <label class="media-switch">录入麦克风 <button type="button" class="switch" data-key="mic" data-on="true"><span></span></button></label>
+                  <label class="media-switch">录入系统声音 <button type="button" class="switch" data-key="systemAudio" data-on="false"><span></span></button></label>
+                  <label class="media-switch">显示按键提示 <button type="button" class="switch" data-key="keyHint" data-on="false"><span></span></button></label>
+                  <!-- 保存路径行：镜像截图面板（自定义目录，未配置报错；直播面板按用户裁定不加目录入口） -->
+                  <span class="media-path">保存路径：<span id="record-dir">…</span></span>
+                  <button type="button" class="btn-soft" id="record-pick-dir">选择目录</button>
+                </div>
+                <div class="media-actions">
+                  <button type="button" class="btn-gold" id="record-toggle">开始录屏</button>
+                  <button type="button" class="btn-soft" id="record-reset">重置</button>
+                </div>
+                <p class="media-status" id="record-status">状态：待机 · 预计 1 分钟约 88 MB</p>
+              </div>
+
+              <div class="media-card glass">
+                <div class="media-card__head">
+                  <p class="media-card__title">录制预览</p>
+                  <span class="media-status" id="record-clock">时间轴 00:00</span>
+                </div>
+                <div class="record-preview"><video id="record-video" muted playsinline></video></div>
+                <div class="record-wave" id="record-wave"></div>
+                <p class="media-status" id="record-audio">音轨：未连接</p>
+                <p class="media-card__title">最近录制</p>
+                <div class="record-list" id="record-list"></div>
+              </div>
+            </div>
+          </div>
+          <!-- ③-3 直播面板（2.7d）：开播设置 / 画面预览 / 推流日志 -->
+          <div class="studio__panel" data-panel="live" hidden>
+            <div class="media-split">
+              <div class="media-card glass">
+                <p class="media-card__title">开播设置</p>
+                <div class="media-form media-form--stack">
+                  <label class="media-field">直播标题
+                    <input id="live-title" type="text" value="在净善宫整理委托 · 顺便聊聊薄荷" />
+                  </label>
+                  <label class="media-field">推流地址
+                    <input id="live-url" type="text" placeholder="rtmp://…" />
+                  </label>
+                  <div class="media-form__row">
+                    <label class="media-field">画质
+                      <select id="live-quality" class="media-select">
+                        <option value="1920x1080x60x12000000" selected>1080p60 · 12 Mbps</option>
+                        <option value="1920x1080x30x8000000">1080p30 · 8 Mbps</option>
+                        <option value="1280x720x60x6000000">720p60 · 6 Mbps</option>
+                      </select>
+                    </label>
+                    <label class="media-field">延迟模式
+                      <select id="live-latency" class="media-select">
+                        <option value="low" selected>低延迟（约 2 秒）</option>
+                        <option value="balanced">均衡（约 5 秒）</option>
+                      </select>
+                    </label>
+                  </div>
+                  <!-- 麦克风：原型没有（原型没提音频），§6 偏差 ⑤ 要求补 -->
+                  <label class="media-field">麦克风
+                    <select id="live-mic" class="media-select"></select>
+                  </label>
+                </div>
+                <div class="media-switches media-switches--stack">
+                  <!-- 弹幕朗读：开关已就位（照原型渲染 + 可切换），功能待接（弹幕源 + TTS 是 4.9 之后的事，§6 偏差 ⑥ 说明） -->
+                  <label class="media-switch">直播时开启弹幕朗读 <button type="button" class="switch" data-key="danmakuTts" data-on="false"><span></span></button></label>
+                  <label class="media-switch">自动录制一份存档 <button type="button" class="switch" data-key="archive" data-on="true"><span></span></button></label>
+                </div>
+                <div class="media-actions">
+                  <button type="button" class="btn-gold" id="live-toggle">开始直播</button>
+                  <button type="button" class="btn-soft" id="live-test">测试推流</button>
+                </div>
+                <p class="media-status" id="live-status">状态：未开播</p>
+              </div>
+
+              <!-- 右列：预览与推流日志各自成框（纵向堆叠容器，避免 grid 把日志卡排到左列第二行） -->
+              <div class="media-stack">
+                <div class="media-card glass">
+                  <div class="media-card__head">
+                    <p class="media-card__title">画面预览</p>
+                    <!-- 徽标只写 LIVE，不写人数：没有观众数数据源（§6 偏差 ⑥） -->
+                    <span class="live-badge" id="live-badge" hidden><span class="live-badge__dot"></span>LIVE</span>
+                  </div>
+                  <div class="live-preview"><video id="live-video" muted playsinline></video></div>
+                </div>
+
+                <div class="media-card glass">
+                  <div class="media-card__head">
+                    <p class="media-card__title">推流日志</p>
+                    <!-- 原型这里是 3 条假弹幕；没有弹幕数据源，换成 FFmpeg 真实日志（§6 偏差 ③）；日志落盘 ffmpeg/logs/，清空按钮删除已关闭的 .log -->
+                    <button type="button" class="btn-soft" id="live-clear-logs">清空日志</button>
+                  </div>
+                  <pre class="live-log" id="live-log"></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 回忆视图 · 5.5.2 重写（原 2.10 记忆视图整体作废，P21）；两个框由 memory/memory.ts 渲染 -->
+        <section class="view view--hidden" data-view="memory">
+          <header class="view-head">
+            <span class="view-head__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+            </span>
+            <div class="view-head__meta">
+              <h2 class="view-head__title">回忆 · 梦境花园</h2>
+              <p class="view-head__sub">共 <span id="rec-total">0</span> 份对话存档 · 最近保存 <span id="rec-latest">—</span></p>
+            </div>
+            <div class="view-head__tools">
+              <button type="button" class="btn-gold" id="rec-new">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>新建对话
+              </button>
+            </div>
+          </header>
+
+          <div class="recall__body no-sb">
+            <!-- ① 对话存档：列表由 memory.ts 渲染（只吃 chats.list() 轻索引） -->
+            <section class="recall-box">
+              <div class="recall-box__head">
+                <p class="recall-box__title">对话存档</p>
+                <span class="recall-box__count" id="rec-count">0 份</span>
+              </div>
+              <div class="recall-list" id="rec-list"></div>
+              <div class="recall-empty" id="rec-empty" hidden>
+                <span class="recall-empty__icon" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                </span>
+                <p class="recall-empty__title">还没有对话存档</p>
+                <p class="recall-empty__sub">和纳西妲说上第一句话，回忆就会在这里慢慢长出来。</p>
+              </div>
+            </section>
+            <!-- ② 剧情存档：5.7.4 落真实内容（列表由 memory/story-archive.ts 渲染；读 story store，与左框逻辑独立） -->
+            <section class="recall-box">
+              <div class="recall-box__head">
+                <p class="recall-box__title">剧情存档</p>
+                <span class="recall-box__count" id="story-count">0 份</span>
+              </div>
+              <div class="recall-list" id="story-list"></div>
+              <div class="recall-empty" id="story-empty" hidden>
+                <span class="recall-empty__icon" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                </span>
+                <p class="recall-empty__title">后续版本将逐步开放</p>
+                <p class="recall-empty__sub">剧情玩法正在打磨中。</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- 设置视图 · 2.11 按原型 原型 settings.html 实现；4 张卡由 settings/settings.ts 渲染，数据在其「数据层」一节 -->
+        <section class="view view--hidden" data-view="settings">
+          <!-- ① 视图头（复用 .view-head，与聊天/工具箱/任务一致）：图标 + 标题 + 副标题 + 恢复默认 -->
+          <header class="view-head">
+            <span class="view-head__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </span>
+            <div class="view-head__meta">
+              <h2 class="view-head__title">设置</h2>
+              <p class="view-head__sub">外观、陪伴方式、影像与隐私，全部保存在本地花园</p>
+            </div>
+            <div class="view-head__tools">
+              <button type="button" class="btn-soft" id="settings-reset">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>恢复默认
+              </button>
+            </div>
+          </header>
+
+          <!-- ② 滚动区：6.6.1 起改为左导航 + 右内容切换；内容由 settings.ts 按组渲染进 #settings-body -->
+          <div class="settings-layout">
+            <nav class="settings-nav" id="settings-nav" aria-label="设置分组"></nav>
+            <div class="settings__body no-sb" id="settings-body"></div>
+          </div>
+        </section>
+
+        <!-- 关于视图 · 2.11 复用原型 settings.html 的 id="about" 那块卡；由 settings/settings.ts 渲染 -->
+        <section class="view view--hidden" data-view="about">
+          <header class="view-head">
+            <span class="view-head__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            </span>
+            <div class="view-head__meta">
+              <h2 class="view-head__title">关于</h2>
+              <p class="view-head__sub">虚空终端 · 森林智慧女神主题 · 完全离线可用</p>
+            </div>
+          </header>
+
+          <div class="settings__body no-sb" id="about-body"></div>
+        </section>
+        </div><!-- /.view-area -->
+
+        <!-- 右侧状态栏：透明滚动列（2.8 起不再是玻璃容器），卡片由 panel/panel.ts 按视图渲染 -->
+        <aside id="panel" class="no-sb"></aside>
+      </div><!-- /.main-row -->
+    </main>
+  </div>
+  <!-- 6.2 右下角「按住说话 · 语音转文字」按钮（voice/dictate.ts 接线）。
+       语音通话已改为独立窗口（call-window/），主窗口内不再有通话浮层。 -->
+  <div id="call-layer" class="call-layer">
+    <button id="call-launcher" type="button" class="call-launcher" title="按住说话" aria-label="按住说话，松开转文字">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+    </button>
+  </div>
+  <script type="module" src="./main.ts"></script>
+  <script type="module" src="./studio/studio.ts"></script>
+  <script type="module" src="./studio/tools-catalog.ts"></script><!-- 8.7.5 工具箱 MCP 目录卡片 -->
+  <script type="module" src="./studio/capture.ts"></script><!-- 2.7b 截图面板 -->
+  <script type="module" src="./studio/record.ts"></script><!-- 2.7c 录屏面板 -->
+  <script type="module" src="./studio/live.ts"></script><!-- 2.7d 直播面板 -->
+  <script type="module" src="./panel/panel.ts"></script>
+  <script type="module" src="./tasks/tasks.ts"></script>
+  <script type="module" src="./memory/memory.ts"></script>
+  <script type="module" src="./memory/story-archive.ts"></script><!-- 5.7.4 剧情存档框 -->
+  <script type="module" src="./settings/settings.ts"></script>
+  <script type="module" src="./voice/dictate.ts"></script><!-- 6.2 右下角按住说话 · 语音转文字 -->
+</body>
+</html>

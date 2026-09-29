@@ -1,0 +1,68 @@
+/* nahida 基础层 v2 · 浅色玻璃拟态
+   来源：《UI设计规范-森林智慧女神.md》§2.6 字体 / §8 落地注意事项，风格基准 原型 home.html
+   保留阶段一 reset 骨架；深色底与 10px 可见滚动条已废弃（改 .no-sb 隐藏） */
+
+/* 内嵌思源宋体子集（可变字重 200–900），OFL-1.1，授权见 assets/fonts/OFL.txt */
+@font-face {
+  font-family: "Nahida Serif SC";
+  src: url("../assets/fonts/nahida-serif-sc.woff2") format("woff2");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Nahida Serif SC", "Noto Serif SC", "Source Han Serif SC", serif;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text-strong);
+  /* 8.7.22：双层背景 —— 自定义图片底图（--bg-image 内联覆盖，含遮罩层）叠在渐变底上；
+     无图时 --bg-image 兜底 none，退化为纯渐变，外观与旧版完全一致 */
+  background:
+    var(--bg-image, none),
+    var(--bg-page);
+  user-select: none;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+button:disabled { cursor: not-allowed; }
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+textarea { user-select: text; }
+a { color: var(--brand); text-decoration: none; transition: color var(--t-fast); }
+a:hover { color: var(--brand-bright); }
+
+::selection { background: rgba(18, 141, 107, .25); color: var(--text-strong); }
+
+/* 滚动条隐藏（规范 §8.6：各栏内部滚动，不出现页面级滚动条；滚轮/键盘可滚） */
+.no-sb { scrollbar-width: none; -ms-overflow-style: none; }
+.no-sb::-webkit-scrollbar { display: none; width: 0; height: 0; }

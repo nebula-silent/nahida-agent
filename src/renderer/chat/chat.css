@@ -1,0 +1,704 @@
+/* nahida 聊天视图 · 2.6 从零编写
+   阶段一的 .chat__messages / .chat__composer / .msg / .role 全项目零 CSS 规则，本文件是唯一来源。
+   视觉基准：《界面还原清单》§2 + 原型 home.html 聊天区（Tailwind 已翻译为原生 CSS）。
+   只写视觉：main.ts 聊天链路依赖的 8 个 id 结构不动，逻辑零改动。 */
+
+/* ===== ② 消息区（可滚动；隐藏滚动条由 HTML 上的 .no-sb 提供） ===== */
+.chat__messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 20px 12px;
+}
+
+/* 空态：作为唯一子元素时 margin:auto 垂直水平居中 */
+.chat__empty {
+  margin: auto;
+  padding: 48px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ===== 消息行：main.ts appendMessage 生成 div.msg.{role} > span.role + div 正文
+   头像用 ::before 绘制（main.ts 不生成头像节点）；.role 样式化为气泡下方 11px 灰字 */
+.msg {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 4px 10px;
+  align-items: start;
+  max-width: 82%;
+}
+.msg::before {
+  content: "纳"; /* 纳西妲侧：CSS 字母头像（径向绿渐变，同品牌头像配色） */
+  grid-column: 1;
+  grid-row: 1;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255,255,255,.85);
+  background: radial-gradient(circle at 32% 28%, #f6fffb, #c3efdc 60%, #8fd9bd);
+  color: var(--brand-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.msg > div {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  padding: 10px 18px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text-strong);
+  white-space: pre-wrap; /* 保留模型输出里的换行 */
+  overflow-wrap: anywhere;
+  /* leaf-ai：绿渐变 + 左下角小圆角（清单 §2） */
+  background: linear-gradient(135deg, rgba(196,242,223,.94), rgba(126,208,176,.8));
+  border: 1px solid rgba(255,255,255,.85);
+  border-radius: var(--r-bubble) var(--r-bubble) var(--r-bubble) 8px;
+  box-shadow: 0 18px 34px -24px rgba(12,84,63,.8), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.msg > .role {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+
+/* 用户消息：靠右、白金气泡、右上角小圆角（清单 §2）、右侧「A」头像 */
+.msg.user {
+  align-self: flex-end;
+  grid-template-columns: minmax(0, 1fr) 36px;
+}
+.msg.user::before {
+  content: "A";
+  grid-column: 2;
+  grid-row: 1;
+  background: #fff;
+  border-color: rgba(216,180,95,.5);
+  color: var(--gold-text);
+}
+.msg.user > div {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: end;
+  /* petal-user：白→暖金渐变 */
+  background: linear-gradient(150deg, #ffffff, #fffaef 62%, #fdf0d8);
+  border-color: rgba(216,180,95,.5);
+  border-radius: var(--r-bubble) 8px var(--r-bubble) var(--r-bubble);
+  box-shadow: 0 18px 34px -26px rgba(140,110,40,.65), inset 0 1px 0 #fff;
+}
+.msg.user > .role {
+  grid-column: 1;
+  grid-row: 2;
+  text-align: right;
+}
+
+/* 错误消息：浅红底 + 「!」头像（#status 同步染红） */
+.msg.error::before {
+  content: "!";
+  background: radial-gradient(circle at 32% 28%, #fff, #f3d9d9 60%, #e3bcbc);
+  color: #8c3a3a;
+}
+.msg.error > div {
+  background: linear-gradient(150deg, #fffdfd, #ffecec);
+  border-color: rgba(214,124,124,.45);
+  color: #8c3a3a;
+  box-shadow: 0 14px 26px -22px rgba(140,60,60,.7), inset 0 1px 0 #fff;
+}
+
+/* ===== 7.7 补：气泡内表情 PNG（message-tree renderBubbleContent 生成 img.msg-expression） ===== */
+.msg-expression {
+  width: 26px;           /* 行内尺寸：略大于字号，随文字排版 */
+  height: 26px;
+  vertical-align: -7px;  /* 基线负偏移，与中文字面居中 */
+  margin: 0 2px;
+  user-select: none;
+}
+/* 整条消息除空白外全是表情 → 贴纸态（微信式大图） */
+.msg > .is-sticker .msg-expression {
+  width: 96px;
+  height: 96px;
+  vertical-align: middle;
+}
+
+/* ===== 预备样式（清单 §2 要求；main.ts 当前不生成这些节点，留给后续对话增强，2.6 不塞演示 DOM） ===== */
+/* 日期分隔行：居中 11px 灰字 */
+.chat__date-sep {
+  align-self: center;
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+/* 居中提示：11px 灰字 */
+.chat__hint-center {
+  align-self: center;
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+/* AI 气泡内嵌列表卡：每项 = 标题 + 右侧奖励，浅色分隔线 */
+.msg__card {
+  width: 100%;
+  margin-top: 10px;
+  padding: 4px 14px;
+  background: rgba(255,255,255,.7);
+  border: 1px solid rgba(229,210,154,.7);
+  border-radius: 16px;
+}
+.msg__card-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 9px 0;
+  font-size: 13px;
+  color: var(--text-strong);
+}
+.msg__card-item + .msg__card-item { border-top: 1px solid rgba(229,210,154,.45); }
+.msg__card-reward { font-size: 11px; font-weight: 300; color: var(--gold-text); white-space: nowrap; }
+
+/* ===== ④ 输入区（玻璃材质由 HTML 上的 .glass 提供） ===== */
+.chat__composer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 0 20px;
+  padding: 12px 14px;
+  border-radius: var(--r-card);
+}
+.chat__composer-leaf {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin-top: 9px;
+  display: flex;
+  color: var(--brand);
+}
+/* 无边框透明底；main.ts autoGrow 限高 140px，这里保持一致 */
+.chat__composer textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-height: 140px;
+  padding: 9px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-strong);
+}
+.chat__composer textarea::placeholder { color: var(--text-muted); }
+.chat__composer-tools {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 1px;
+}
+
+/* 金色发送按钮（规范 §1.6 主按钮：金底 + 深色字 + 圆角 12px） */
+.chat__send {
+  height: 40px;
+  padding: 0 22px;
+  border-radius: 12px;
+  border: 1px solid #e0c988;
+  background: linear-gradient(120deg, #f7e6b5, #d8b45f);
+  color: #5c4713;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 12px 24px -14px rgba(180,150,60,.8);
+  transition: all var(--t-fast);
+}
+.chat__send:hover:not(:disabled) { filter: brightness(1.05); }
+.chat__send:active:not(:disabled) { transform: translateY(1px); }
+.chat__send:disabled { opacity: .45; cursor: default; box-shadow: none; }
+
+/* 停止按钮（main.ts 流式时切 hidden）：浅底绿描边次按钮 */
+.chat__stop {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(18,141,107,.45);
+  background: rgba(255,255,255,.75);
+  color: #14503f;
+  font-size: 14px;
+  transition: all var(--t-fast);
+}
+.chat__stop:hover {
+  background: #fff;
+  box-shadow: 0 10px 20px -16px rgba(18,141,107,.9);
+}
+
+/* ===== ⑤ 底部状态行：#status 动态状态 + 静态提示；出错时隐去提示让红字独立可见 ===== */
+.chat__statusline {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 8px;
+  margin: 10px 20px 14px;
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.chat__status { color: #2f6b57; }
+.chat__status.error { color: #c04545; }
+.chat__statusline:has(.chat__status.error) .chat__statusline-hint { display: none; }
+
+/* 模型下拉 trigger（清单 §1.6 select 视觉：白底细边圆角 12px；2.8 起为自绘组件的触发器） */
+.chat__select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  max-width: 160px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.8);
+  background: rgba(255,255,255,.6);
+  color: #14503f;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.chat__select:hover { background: #fff; border-color: rgba(216,180,95,.6); }
+.chat__select--disabled { opacity: .55; cursor: default; }
+.chat__select--disabled:hover { background: rgba(255,255,255,.6); border-color: rgba(255,255,255,.8); }
+
+/* 自绘模型下拉（组件 chat/model-dropdown.ts，参考自 Cyrene-Agent）：trigger 细节 + body 级菜单 */
+.model-trigger__value { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.model-trigger__chevron-wrap { flex: 0 0 auto; display: flex; transition: transform var(--t-fast); }
+.model-trigger.is-open .model-trigger__chevron-wrap { transform: rotate(180deg); }
+
+/* ===== 9.1：工作目录触发器（组件 chat/workdir-picker.ts）：复用 .chat__select 视觉，只补目录特有细节 ===== */
+.dir-trigger { gap: 5px; max-width: 200px; }
+.dir-trigger::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  background: currentColor;
+  /* 文件夹图标（lucide folder 单色路径，mask 方式免内联 svg —— 与组件值文案同色） */
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>') no-repeat center / contain;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>') no-repeat center / contain;
+  opacity: .75;
+}
+.dir-trigger__value { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* 已绑定态：金描边高亮（与 hover 同族，让「这个对话已绑定目录」一眼可辨） */
+.dir-trigger.is-active { border-color: rgba(216,180,95,.75); background: rgba(255,255,255,.85); }
+.dir-trigger.is-active::before { opacity: 1; }
+.dir-trigger__clear {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: #8a7a4a;
+  transition: all var(--t-fast);
+}
+.dir-trigger__clear:hover { background: rgba(216,180,95,.28); color: #5c4713; }
+
+.model-menu {
+  position: fixed;
+  z-index: 999;
+  display: none; /* 组件 open 时置 block 并现算坐标 */
+  min-width: 200px;
+  max-width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.8);
+  background: linear-gradient(160deg, rgba(255,255,255,.95), rgba(240,251,245,.92));
+  box-shadow: 0 14px 38px rgba(15,92,69,.18);
+}
+.model-menu__opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  color: #14503f;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.model-menu__opt:hover { background: rgba(18,141,107,.1); }
+.model-menu__opt.is-active {
+  background: linear-gradient(120deg, #128d6b, #3fbf95);
+  color: #fff;
+}
+.model-menu__label { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.model-menu__check { flex: 0 0 auto; display: flex; }
+.model-menu__opt--empty {
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ==================== 7.7 表情面板（微信式，组件 chat/expression-panel.ts） ==================== */
+/* 面板动态挂 body、position: fixed 现算坐标（与 .model-menu 同手法）；6 列 × 2 行放下 10 格 */
+.expression-panel {
+  position: fixed;
+  z-index: 999;
+  display: none; /* 组件 open 时置 grid 并现算坐标 */
+  grid-template-columns: repeat(6, 48px);
+  gap: 6px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.8);
+  background: linear-gradient(160deg, rgba(255,255,255,.96), rgba(240,251,245,.93));
+  box-shadow: 0 14px 38px rgba(15,92,69,.18);
+  backdrop-filter: var(--glass-blur);
+}
+.expression-panel__item {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+.expression-panel__item:hover { background: rgba(18,141,107,.12); transform: translateY(-1px); }
+.expression-panel__item:active { transform: scale(.94); }
+.expression-panel__img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain; /* 11 张同为 128×128，contain 保证观感等大且不裁 */
+  pointer-events: none;
+}
+
+/* ==================== 4.1.1 工具卡片 ==================== */
+/* 内联在聊天流里的工具调用 / 审批卡片：与 .msg 气泡同一族 token，不新造颜色变量 */
+.toolcard {
+  max-width: 86%;
+  margin: 6px auto 6px 0;
+  padding: 10px 14px;
+  border-radius: var(--r-inner);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-left: 3px solid var(--brand-mid);
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.toolcard__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.toolcard__name { font-weight: 600; color: var(--text-strong); }
+
+/* 风险徽标：危险三等暖红（沿用 3.8 失败态暖红一族），中性三等灰绿 */
+.toolcard__risk {
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 300;
+  background: rgba(14, 59, 46, .08);
+  color: var(--text-muted);
+}
+.toolcard__risk[data-risk="fs-write"],
+.toolcard__risk[data-risk="shell"],
+.toolcard__risk[data-risk="input-control"] {
+  background: rgba(240, 166, 142, .22);
+  color: #b05a3c;
+}
+
+.toolcard__state { margin-left: auto; color: var(--text-muted); font-size: 11px; }
+
+/* 参数 / 输出：等宽 + 预换行 + 限高滚动（长参数不撑破卡片） */
+.toolcard__args,
+.toolcard__output {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text-body);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 140px;
+  overflow: auto;
+  background: rgba(255, 255, 255, .45);
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.toolcard__reason { color: var(--gold-text); font-size: 11px; }
+
+.toolcard__actions { display: flex; gap: 8px; }
+
+/* 按钮沿用 #send / #stop 的样式族：圆角 + 玻璃底 + hover 提亮 */
+.toolcard__btn {
+  padding: 5px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: var(--glass-bg);
+  color: var(--text-body);
+  font-size: 12px;
+  cursor: pointer;
+  transition: box-shadow .18s ease, transform .18s ease, color .18s ease;
+}
+.toolcard__btn:hover { color: var(--gold-text-deep); box-shadow: 0 2px 10px -2px rgba(216, 180, 95, .55); }
+.toolcard__btn:disabled { opacity: .55; cursor: default; box-shadow: none; }
+.toolcard__btn[data-act="allow"]:hover { color: var(--brand-ink); }
+
+/* 终态左边框：拒绝 / 失败暖红，成功绿，作废中性 */
+.toolcard[data-status="denied"],
+.toolcard[data-status="failed"] { border-left-color: #f0a68e; }
+.toolcard[data-status="succeeded"] { border-left-color: var(--brand-bright); }
+.toolcard[data-status="voided"] { border-left-color: rgba(14, 59, 46, .2); opacity: .75; }
+
+/* ==================== 5.7.3.3 剧情列表卡 ==================== */
+/* 卡片挂在场景消息的 .msg 内部（story-flow 编排）。.msg > div 的气泡样式会命中它，
+   所以用 .msg .storycard（更高优先级）逐一复位，再排到第 3 行（气泡 + 角色行之下）、与气泡左缘对齐。
+   颜色 / 圆角 / 阴影全部沿用既有 token，不新造变量。 */
+.msg .storycard {
+  grid-column: 2;
+  grid-row: 3;
+  justify-self: start;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 10px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-left: 3px solid var(--brand-mid);
+  border-radius: var(--r-inner);
+  box-shadow: var(--glass-shadow);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-body);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.storycard__scene {
+  color: var(--text-strong);
+  white-space: pre-wrap; /* 场景文案里的换行保留 */
+  overflow-wrap: anywhere;
+}
+
+.storycard__list { display: flex; flex-direction: column; }
+
+/* 每项 = 标题 + 右侧奖励；项间 1px 浅色分隔线（界面还原清单 §2 原文） */
+.storycard__opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid rgba(14, 59, 46, .1);
+  background: transparent;
+  font: inherit;
+  color: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+  transition: color .18s ease, background .18s ease;
+}
+.storycard__opt:first-child { border-top: 0; }
+.storycard__opt:hover { color: var(--gold-text-deep); background: rgba(255, 255, 255, .4); }
+.storycard__opt:disabled { opacity: .55; cursor: default; }
+.storycard__opt:disabled:hover { background: transparent; }
+
+.storycard__label { flex: 1 1 auto; min-width: 0; }
+.storycard__reward { flex: 0 0 auto; color: var(--text-muted); font-size: 12px; }
+
+/* 被选中的选项：lockStoryCard 打的标记 */
+.storycard__opt[data-chosen="true"] { color: var(--brand-ink); font-weight: 600; opacity: .85; }
+
+/* ==================== 8.12 工具授权面板（模态，组件 chat/tool-panel.ts） ==================== */
+/* 遮罩 + 玻璃卡动态挂 body（§0 锚点 9 范式）；z-index 1000 压过 999 的下拉 / 表情弹层 */
+.tool-panel__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none; /* 组件 open 时置 flex 居中 */
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 40, 30, .28);
+}
+.tool-panel {
+  width: min(420px, calc(100vw - 48px));
+  max-height: min(560px, calc(100vh - 96px));
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  border-radius: var(--r-card);
+}
+.tool-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.tool-panel__title { font-weight: 600; color: var(--text-strong); font-size: 14px; }
+.tool-panel__level { color: var(--text-muted); font-size: 11px; }
+.tool-panel__close { margin-left: auto; }
+.tool-panel__note {
+  flex: 0 0 auto;
+  margin: 4px 0 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.tool-panel__body { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.tool-panel__group { margin-bottom: 10px; }
+.tool-panel__group-head {
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.tool-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+.tool-panel__name { font-size: 12px; color: var(--text-strong); min-width: 0; }
+/* 风险徽标：色样照 .toolcard__risk（危险三等暖红，中性三等灰绿） */
+.tool-panel__risk {
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 300;
+  background: rgba(14, 59, 46, .08);
+  color: var(--text-muted);
+}
+.tool-panel__risk[data-risk="fs-write"],
+.tool-panel__risk[data-risk="shell"],
+.tool-panel__risk[data-risk="input-control"] {
+  background: rgba(240, 166, 142, .22);
+  color: #b05a3c;
+}
+/* 分类小标签（分组改为按「能不能用」后，category 降级为行内小标） */
+.tool-panel__cat {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  font-size: 10px;
+  background: rgba(14, 59, 46, .06);
+  color: var(--text-muted);
+}
+.tool-panel__group-note { margin: 0 0 2px; font-size: 11px; color: var(--text-muted); }
+/* 开关靠右；锁定（档位拒绝）灰显 + 禁用光标 */
+.tool-panel__row .switch { margin-left: auto; flex: 0 0 auto; }
+.tool-panel__row .switch[disabled] { opacity: .45; cursor: not-allowed; }
+.tool-panel__sub {
+  margin: -2px 0 2px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.tool-panel__empty { margin: 12px 0; font-size: 12px; color: var(--text-muted); }
+/* 错误文案：沿用项目失败态暖红一族（.toolcard__risk 危险色同源），不手动改 console 红色 */
+.tool-panel__error { margin: 12px 0; font-size: 12px; color: #b05a3c; }
+
+/* ==================== 历史对话搜索面板（模态，组件 chat/search-panel.ts） ==================== */
+/* 卡比工具授权面板宽一号：结果行要放下 标题 + 角色 + 时间 + 片段 两层 */
+.search-panel {
+  width: min(520px, calc(100vw - 48px));
+  max-height: min(600px, calc(100vh - 96px));
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  border-radius: var(--r-card);
+}
+.search-panel__inputrow { flex: 0 0 auto; margin: 6px 0 8px; }
+.search-panel__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--text-strong);
+  background: rgba(255, 255, 255, .55);
+  border: 1px solid rgba(14, 59, 46, .14);
+  border-radius: var(--r-pill);
+  outline: none;
+}
+.search-panel__input:focus { border-color: rgba(14, 59, 46, .32); }
+.search-panel__body { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.search-panel__empty { margin: 18px 0; font-size: 12px; color: var(--text-muted); text-align: center; }
+.search-panel__note { margin: 0 0 6px; font-size: 11px; color: var(--text-muted); }
+/* 结果行：整行可点，悬停浮起；头部行 = 会话标题 + 角色徽标 + 时间，下面一行片段 */
+.search-panel__hit {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  margin: 0 0 6px;
+  border: 1px solid rgba(14, 59, 46, .10);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .38);
+  cursor: pointer;
+}
+.search-panel__hit:hover { background: rgba(255, 255, 255, .68); border-color: rgba(14, 59, 46, .22); }
+.search-panel__hit-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.search-panel__hit-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-panel__hit-role {
+  flex: 0 0 auto;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  font-size: 10px;
+  background: rgba(14, 59, 46, .08);
+  color: var(--text-muted);
+}
+.search-panel__hit-role[data-role="user"] { background: rgba(14, 59, 46, .16); color: var(--text-strong); }
+.search-panel__hit-time { flex: 0 0 auto; margin-left: auto; font-size: 10px; color: var(--text-muted); }
+.search-panel__hit-snippet {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.search-panel__hit-snippet mark {
+  background: rgba(240, 200, 100, .55);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}

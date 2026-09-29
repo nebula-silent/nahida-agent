@@ -1,0 +1,19 @@
+// 3.1 新增：只给 renderer 做类型检查（打包仍由 vite 负责，这里 noEmit）
+// 背景：renderer 一直没被 tsc 检查过 —— build:main 只含 src/main + src/shared，
+//       build:preload 只含 src/preload + src/shared
+// 用法：npx tsc --noEmit -p tsconfig.renderer.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true
+  },
+  "include": ["src/renderer/**/*.ts", "src/shared/**/*.ts"]
+}
